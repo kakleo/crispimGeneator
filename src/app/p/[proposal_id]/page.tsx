@@ -13,6 +13,7 @@ import Terms from '@/components/Terms';
 import Footer from '@/components/Footer';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface PageProps {
   params: {

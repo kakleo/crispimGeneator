@@ -8,6 +8,7 @@ import type { ProposalDocument } from '@/lib/schema/types';
 import ProposalListTable from '@/components/ProposalListTable';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function DashboardPage() {
   const cookieStore = cookies();

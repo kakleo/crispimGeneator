@@ -4,7 +4,7 @@ import type { SheetData, RawRow } from '../schema/types';
 import { sheetCache } from './cache';
 import { DEFAULT_FIXTURES } from './fixtures';
 
-const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyCtZEuHNy4zcMdcohNFBifG2kTqV8aBpS2B0PgBTSTNJQM08vjYb2t4zxzhTb2KD8/exec';
+const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6PZ6tShZMo6hKsR9tXIP1TTRD4b5uqr5sTQ1mFT1nDRlysOlZVp3uKKx0L3CetZh8/exec';
 
 function getAppsScriptUrl(): string {
   if (process.env.GOOGLE_APPS_SCRIPT_URL && process.env.GOOGLE_APPS_SCRIPT_URL.trim()) {
@@ -80,8 +80,10 @@ export async function fetchSheetData(forceRefresh: boolean = false): Promise<{
     try {
       const res = await fetch(appsScriptUrl, {
         redirect: 'follow',
+        cache: 'no-store',
         headers: {
           Accept: 'application/json',
+          'Cache-Control': 'no-cache',
         },
       });
 
@@ -206,6 +208,7 @@ export async function checkSheetsHealth(): Promise<{ ok: boolean; message: strin
       const timeoutId = setTimeout(() => controller.abort(), 8000);
       const res = await fetch(appsScriptUrl, {
         redirect: 'follow',
+        cache: 'no-store',
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
