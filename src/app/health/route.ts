@@ -1,7 +1,9 @@
-import type { APIRoute } from 'astro';
-import { checkSheetsHealth } from '../lib/sheets/client';
+import { NextResponse } from 'next/server';
+import { checkSheetsHealth } from '@/lib/sheets/client';
 
-export const GET: APIRoute = async () => {
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
   const sheetsHealth = await checkSheetsHealth();
 
   const responsePayload = {
@@ -15,8 +17,7 @@ export const GET: APIRoute = async () => {
     },
   };
 
-  return new Response(JSON.stringify(responsePayload, null, 2), {
+  return NextResponse.json(responsePayload, {
     status: sheetsHealth.ok ? 200 : 503,
-    headers: { 'Content-Type': 'application/json' },
   });
-};
+}

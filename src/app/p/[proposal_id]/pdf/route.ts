@@ -1,18 +1,20 @@
-import type { APIRoute } from 'astro';
-import { fetchSheetData } from '../../../lib/sheets/client';
-import { getTermsHtml } from '../../../lib/terms';
-import { validateAndParseProposal } from '../../../lib/schema/validator';
-import { generateProposalPdf, computeDataHash } from '../../../lib/pdf';
-import { COOKIE_NAME } from '../../../lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { fetchSheetData } from '@/lib/sheets/client';
+import { getTermsHtml } from '@/lib/terms';
+import { validateAndParseProposal } from '@/lib/schema/validator';
+import { generateProposalPdf, computeDataHash } from '@/lib/pdf';
+import { COOKIE_NAME } from '@/lib/auth';
 
-export const GET: APIRoute = async ({ params, request, cookies, url }) => {
+export const dynamic = 'force-dynamic';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { proposal_id: string } }
+) {
   const proposalId = params.proposal_id;
 
   if (!proposalId) {
-    return new Response(JSON.stringify({ error: 'Missing proposal ID' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return NextResponse.json({ error: 'Missing proposal ID' }, { status: 400 });
   }
 
   // Fetch sheet data
@@ -22,44 +24,37 @@ export const GET: APIRoute = async ({ params, request, cookies, url }) => {
   const proposal = validateAndParseProposal(proposalId, data, termsHtml, isStale);
 
   if (!proposal) {
-    return new Response(JSON.stringify({ error: `Proposal "${proposalId}" not found` }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return NextResponse.json(
+      { error: `Proposal "${proposalId}" not found` },
+      { status: 404 }
+    );
   }
 
   // FR-31: Blocking errors prevent PDF export
   if (!proposal.validation.isValid) {
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         error: 'Cannot export PDF: proposal has blocking validation errors.',
         validationErrors: proposal.validation.errors,
-      }),
-      {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      }
+      },
+      { status: 400 }
     );
   }
 
-  // FR-3: Only proposals with status 'ready' are exportable by default
+  // FR-3: Archived proposals cannot be exported
   if (proposal.meta.status === 'archived') {
-    return new Response(
-      JSON.stringify({ error: 'Archived proposals cannot be exported.' }),
-      {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' },
-      }
+    return NextResponse.json(
+      { error: 'Archived proposals cannot be exported.' },
+      { status: 403 }
     );
   }
 
   try {
-    // Determine target URL for headless Chromium to render with proper port
-    const host = request.headers.get('host') || `127.0.0.1:${process.env.PORT || 4321}`;
+    const host = request.headers.get('host') || `127.0.0.1:${process.env.PORT || 3000}`;
     const protocol = request.headers.get('x-forwarded-proto') || 'http';
     const targetUrl = `${protocol}://${host}/p/${proposalId}`;
 
-    const sessionCookie = cookies.get(COOKIE_NAME)?.value;
+    const sessionCookie = request.cookies.get(COOKIE_NAME)?.value;
     const dataHash = computeDataHash(proposal);
 
     const pdfBuffer = await generateProposalPdf({
@@ -74,7 +69,7 @@ export const GET: APIRoute = async ({ params, request, cookies, url }) => {
     const versionPart = proposal.meta.version ? `-${proposal.meta.version}` : '';
     const filename = `${proposalId}${versionPart}-${today}.pdf`;
 
-    return new Response(pdfBuffer, {
+    return new Response(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -91,24 +86,15 @@ export const GET: APIRoute = async ({ params, request, cookies, url }) => {
       errMsg.includes('Could not find Chrome') ||
       errMsg.includes('spawn') ||
       errMsg.includes('chromium') ||
-      errMsg.includes('Executable does not exist')
+      errMsg.includes('Executable does not exist') ||
+      errMsg.includes('Failed to launch')
     ) {
-      return new Response(null, {
-        status: 302,
-        headers: {
-          Location: `/p/${proposalId}?autoprint=1`,
-        },
-      });
+      return NextResponse.redirect(new URL(`/p/${proposalId}?autoprint=1`, request.url), 302);
     }
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to generate PDF document. Please use the Print button on the preview page.',
-        details: errMsg,
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
+
+    return NextResponse.json(
+      { error: `PDF generation failed: ${errMsg}` },
+      { status: 500 }
     );
   }
-};
+}

@@ -35,7 +35,7 @@ const TAB_PRICING = process.env.TAB_PRICING || 'Pricing';
 const TAB_INCLUSIONS = process.env.TAB_INCLUSIONS || 'Inclusions';
 const TAB_SETTINGS = process.env.TAB_SETTINGS || 'Settings';
 
-function rowsToObjects(values?: any[][]): RawRow[] {
+function rowsToObjects(values?: any[][] | null): RawRow[] {
   if (!values || values.length === 0) return [];
   const headers = values[0].map((h: any) => String(h || '').trim());
   const rows: RawRow[] = [];

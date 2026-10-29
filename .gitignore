@@ -1,6 +1,10 @@
 node_modules/
+.next/
+out/
 .astro/
 dist/
 .vercel/
 .env
+.env*.local
+*.log
 .DS_Store

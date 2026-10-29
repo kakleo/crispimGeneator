@@ -1,9 +1,11 @@
-import type { APIRoute } from 'astro';
-import { fetchSheetData } from '../../lib/sheets/client';
-import { getTermsHtml } from '../../lib/terms';
-import { validateAndParseProposal } from '../../lib/schema/validator';
+import { NextResponse } from 'next/server';
+import { fetchSheetData } from '@/lib/sheets/client';
+import { getTermsHtml } from '@/lib/terms';
+import { validateAndParseProposal } from '@/lib/schema/validator';
 
-export const GET: APIRoute = async () => {
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
   const diag: Record<string, any> = {
     env: {
       hasAppsScriptUrl: !!process.env.GOOGLE_APPS_SCRIPT_URL,
@@ -42,19 +44,13 @@ export const GET: APIRoute = async () => {
       validationErrors: doc?.validation?.errors,
     };
 
-    return new Response(JSON.stringify(diag, null, 2), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return NextResponse.json(diag, { status: 200 });
   } catch (err: any) {
     diag.error = {
       message: err?.message || String(err),
       stack: err?.stack,
     };
 
-    return new Response(JSON.stringify(diag, null, 2), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return NextResponse.json(diag, { status: 500 });
   }
-};
+}

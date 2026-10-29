@@ -22,11 +22,14 @@ function request(options, data) {
   });
 }
 
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
 async function runTests() {
+  console.log(`Testing server at 127.0.0.1:${PORT}`);
   console.log('--- TEST 1: Health check (/health) ---');
   const healthRes = await request({
     hostname: '127.0.0.1',
-    port: 4321,
+    port: PORT,
     path: '/health',
     method: 'GET',
   });
@@ -37,7 +40,7 @@ async function runTests() {
   console.log('\n--- TEST 2: Unauthenticated / redirect ---');
   const unauthRes = await request({
     hostname: '127.0.0.1',
-    port: 4321,
+    port: PORT,
     path: '/',
     method: 'GET',
   });
@@ -51,7 +54,7 @@ async function runTests() {
   const badLoginRes = await request(
     {
       hostname: '127.0.0.1',
-      port: 4321,
+      port: PORT,
       path: '/api/login',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -68,7 +71,7 @@ async function runTests() {
   const goodLoginRes = await request(
     {
       hostname: '127.0.0.1',
-      port: 4321,
+      port: PORT,
       path: '/api/login',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -89,7 +92,7 @@ async function runTests() {
   console.log('\n--- TEST 5: Authenticated Dashboard (/) ---');
   const dashRes = await request({
     hostname: '127.0.0.1',
-    port: 4321,
+    port: PORT,
     path: '/',
     method: 'GET',
     headers: { Cookie: sessionCookie },
@@ -104,7 +107,7 @@ async function runTests() {
   console.log('\n--- TEST 6: Proposal Preview (/p/flores-overland-4d) ---');
   const previewRes = await request({
     hostname: '127.0.0.1',
-    port: 4321,
+    port: PORT,
     path: '/p/flores-overland-4d',
     method: 'GET',
     headers: { Cookie: sessionCookie },
@@ -112,7 +115,10 @@ async function runTests() {
   console.log('Status:', previewRes.statusCode);
   const hasItinerary = previewRes.body.includes('Journey to Moni');
   const hasPricing = previewRes.body.includes('PRICE INFORMATION');
-  const hasInclusions = previewRes.body.includes('INCLUDE & EXCLUDE');
+  const hasInclusions =
+    previewRes.body.includes('INCLUDE &amp; EXCLUDE') ||
+    previewRes.body.includes('INCLUDE & EXCLUDE') ||
+    previewRes.body.includes('include-exclude-section');
   const hasTerms = previewRes.body.includes('Terms') || previewRes.body.includes('terms-section');
   console.log('Contains Itinerary:', hasItinerary);
   console.log('Contains Pricing:', hasPricing);
@@ -126,7 +132,7 @@ async function runTests() {
   console.log('Launching headless Chromium print-to-PDF test...');
   const pdfRes = await request({
     hostname: '127.0.0.1',
-    port: 4321,
+    port: PORT,
     path: '/p/flores-overland-4d/pdf',
     method: 'GET',
     headers: { Cookie: sessionCookie },
