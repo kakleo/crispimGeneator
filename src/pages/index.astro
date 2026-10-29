@@ -205,9 +205,9 @@ const draftProposals = proposalsList.filter((p) => p.meta.status === 'draft');
               return (
                 <tr
                   class="proposal-row hover:bg-zinc-50/80 transition-colors"
-                  data-title={p.meta.title.toLowerCase()}
-                  data-route={(p.meta.route || '').toLowerCase()}
-                  data-status={p.meta.status}
+                  data-title={(p.meta?.title || '').toLowerCase()}
+                  data-route={(p.meta?.route || '').toLowerCase()}
+                  data-status={p.meta?.status || 'draft'}
                 >
                   <!-- Proposal Title & Slug -->
                   <td class="py-3.5 px-4">

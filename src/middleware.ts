@@ -1,7 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { COOKIE_NAME, verifySessionToken } from './lib/auth';
 
-const PUBLIC_EXACT_PATHS = new Set(['/login', '/api/login', '/health', '/robots.txt', '/favicon.ico']);
+const PUBLIC_EXACT_PATHS = new Set(['/login', '/api/login', '/health', '/api/diag', '/robots.txt', '/favicon.ico']);
 const PUBLIC_PREFIXES = ['/_astro/', '/fonts/'];
 
 function isPublicAsset(pathname: string): boolean {
