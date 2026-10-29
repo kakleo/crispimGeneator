@@ -1,0 +1,60 @@
+---
+interface Props {
+  include: string[];
+  exclude: string[];
+}
+
+const { include, exclude } = Astro.props;
+const num = (i: number) => String(i + 1).padStart(2, '0');
+---
+
+<div class="include-exclude-section mb-[8mm]">
+  <h2 class="text-[9.5mm] font-bold tracking-tight mb-[5mm] text-black">
+    INCLUDE & EXCLUDE
+  </h2>
+
+  <div class="flex flex-wrap md:flex-nowrap gap-[16mm] md:gap-[23mm]">
+    <!-- Include Column -->
+    <div class="w-full md:w-[84mm]">
+      <h3 class="text-[4mm] font-bold mt-[4mm] mb-[6mm] text-black uppercase tracking-wider">
+        Include
+      </h3>
+      {include.map((item, idx) => (
+        <div class="flex mb-[4.5mm] min-h-[11.5mm] text-[3.9mm] bg-[#f2f2f2] break-inside-avoid">
+          <b class="bg-green w-[11.5mm] min-w-[11.5mm] flex items-center justify-center text-white font-bold select-none">
+            {num(idx)}
+          </b>
+          <span class="px-[4mm] py-[2mm] flex items-center text-black leading-tight">
+            {item}
+          </span>
+        </div>
+      ))}
+    </div>
+
+    <!-- Exclude Column -->
+    <div class="w-full md:w-[84mm]">
+      <h3 class="text-[4mm] font-bold mt-[4mm] mb-[6mm] text-black uppercase tracking-wider">
+        Exclude
+      </h3>
+      {exclude.map((item, idx) => (
+        <div class="flex mb-[4.5mm] min-h-[11.5mm] text-[3.9mm] bg-[#f2f2f2] break-inside-avoid">
+          <b class="bg-red w-[11.5mm] min-w-[11.5mm] flex items-center justify-center text-white font-bold select-none">
+            {num(idx)}
+          </b>
+          <span class="px-[4mm] py-[2mm] flex items-center text-black leading-tight">
+            {item}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+<style>
+  @media print {
+    .bg-green, .bg-red, .bg-\[\#f2f2f2\] {
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+  }
+</style>

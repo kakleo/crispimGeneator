@@ -1,0 +1,377 @@
+---
+import { fetchSheetData } from '../lib/sheets/client';
+import { getTermsHtml } from '../lib/terms';
+import { validateAndParseProposal } from '../lib/schema/validator';
+import type { ProposalDocument } from '../lib/schema/types';
+
+// Load proposals data
+const { data, isStale, lastUpdated } = await fetchSheetData();
+const termsHtml = getTermsHtml();
+
+const proposalsList: ProposalDocument[] = [];
+const rawProposals = data.proposals || [];
+
+for (const raw of rawProposals) {
+  const slug = String(raw.proposal_id || '').trim();
+  if (!slug) continue;
+  const doc = validateAndParseProposal(slug, data, termsHtml, isStale);
+  if (doc) {
+    proposalsList.push(doc);
+  }
+}
+
+// User from session locals
+const currentUser = Astro.locals.user || 'Staff';
+
+// Ready & Draft counts
+const readyProposals = proposalsList.filter((p) => p.meta.status === 'ready');
+const draftProposals = proposalsList.filter((p) => p.meta.status === 'draft');
+---
+
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-zinc-50/50">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Proposals - Nusa Flores Travel</title>
+  <link rel="stylesheet" href="/fonts/fonts.css" />
+  <style>
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-full bg-zinc-50/50 text-zinc-900 antialiased flex flex-col">
+  <!-- Top Navigation Bar (shadcn light mode) -->
+  <header class="sticky top-0 z-30 w-full border-b border-zinc-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-3 group">
+          <div class="h-9 w-auto flex items-center justify-center">
+            <img src="/logo.png" alt="Nusa Flores Travel" class="max-h-9 max-w-[130px] object-contain" />
+          </div>
+          <div class="hidden sm:block border-l border-zinc-200 pl-3">
+            <span class="text-sm font-semibold tracking-tight text-zinc-900 block leading-tight">Tour Proposal Generator</span>
+            <span class="text-xs text-zinc-500">Nusa Flores Travel</span>
+          </div>
+        </a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        {isStale && (
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
+            <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+            Cached Data
+          </span>
+        )}
+
+        <a
+          href="/settings"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 shadow-sm transition-colors"
+        >
+          <svg class="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          <span>Settings</span>
+        </a>
+
+        <button
+          id="btn-refresh-all"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 shadow-sm transition-colors cursor-pointer"
+        >
+          <svg id="refresh-spinner" class="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          <span>Refresh</span>
+        </button>
+
+        <div class="h-4 w-px bg-zinc-200 mx-1"></div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-zinc-500 hidden md:inline">
+            <span class="font-medium text-zinc-800">{currentUser}</span>
+          </span>
+          <form action="/api/logout" method="POST">
+            <button
+              type="submit"
+              class="inline-flex items-center justify-center rounded-md text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 h-8 px-2.5 transition-colors cursor-pointer"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header Title & Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Proposals</h1>
+        <p class="text-sm text-zinc-500 mt-1">
+          Synced directly from your Google Sheet. Open a live preview or export directly to A4 PDF.
+        </p>
+      </div>
+
+      <!-- Search Box (shadcn Input style) -->
+      <div class="relative w-full sm:w-72">
+        <svg class="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Filter proposals by title or route..."
+          class="w-full pl-9 pr-3.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-md text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:border-transparent transition"
+        />
+      </div>
+    </div>
+
+    <!-- Segmented Tabs (shadcn Tabs style) -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="inline-flex items-center rounded-lg bg-zinc-100 p-1 text-zinc-500">
+        <button
+          class="filter-tab active inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-semibold bg-white text-zinc-950 shadow-sm transition-all cursor-pointer"
+          data-filter="all"
+        >
+          All ({readyProposals.length + draftProposals.length})
+        </button>
+        <button
+          class="filter-tab inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 transition-all cursor-pointer"
+          data-filter="ready"
+        >
+          Ready ({readyProposals.length})
+        </button>
+        <button
+          class="filter-tab inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 transition-all cursor-pointer"
+          data-filter="draft"
+        >
+          Drafts ({draftProposals.length})
+        </button>
+      </div>
+
+      {lastUpdated && (
+        <span class="text-xs text-zinc-400 hidden sm:inline">
+          Last synced: {new Date(lastUpdated).toLocaleTimeString()}
+        </span>
+      )}
+    </div>
+
+    <!-- Proposals List (shadcn Table style) -->
+    <div class="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-zinc-200 bg-zinc-50/75 text-zinc-500 font-semibold">
+              <th class="py-3 px-4">Tour Proposal</th>
+              <th class="py-3 px-4 hidden md:table-cell">Route</th>
+              <th class="py-3 px-4 text-center">Days</th>
+              <th class="py-3 px-4 text-center hidden sm:table-cell">Options</th>
+              <th class="py-3 px-4 text-center">Status</th>
+              <th class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="proposals-table-body" class="divide-y divide-zinc-100">
+            {proposalsList.map((p) => {
+              const isDraft = p.meta.status === 'draft';
+              const isReady = p.meta.status === 'ready';
+              const isExportable = p.validation.isValid && isReady;
+
+              return (
+                <tr
+                  class="proposal-row hover:bg-zinc-50/80 transition-colors"
+                  data-title={p.meta.title.toLowerCase()}
+                  data-route={(p.meta.route || '').toLowerCase()}
+                  data-status={p.meta.status}
+                >
+                  <!-- Proposal Title & Slug -->
+                  <td class="py-3.5 px-4">
+                    <div class="flex items-center gap-2">
+                      <a
+                        href={`/p/${p.meta.proposal_id}`}
+                        class="font-semibold text-zinc-900 hover:text-zinc-600 hover:underline transition-colors text-sm"
+                      >
+                        {p.meta.title}
+                      </a>
+                      {p.meta.version && (
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-100 text-zinc-600 border border-zinc-200">
+                          {p.meta.version}
+                        </span>
+                      )}
+                    </div>
+                    <div class="text-[11px] text-zinc-400 font-mono mt-0.5">
+                      {p.meta.proposal_id}
+                    </div>
+                    {p.validation.errors.length > 0 && (
+                      <span class="inline-flex items-center gap-1 text-[11px] text-rose-600 mt-1 font-medium">
+                        <svg class="w-3 h-3 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        {p.validation.errors.length} blocking error(s)
+                      </span>
+                    )}
+                  </td>
+
+                  <!-- Route -->
+                  <td class="py-3.5 px-4 hidden md:table-cell text-zinc-600">
+                    <span class="line-clamp-1 max-w-xs">{p.meta.route || '-'}</span>
+                  </td>
+
+                  <!-- Days -->
+                  <td class="py-3.5 px-4 text-center font-medium text-zinc-700">
+                    {p.itinerary.length}d
+                  </td>
+
+                  <!-- Pricing Options -->
+                  <td class="py-3.5 px-4 text-center hidden sm:table-cell text-zinc-600">
+                    {p.pricingOptions.length}
+                  </td>
+
+                  <!-- Status Badge -->
+                  <td class="py-3.5 px-4 text-center">
+                    {isReady && (
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Ready
+                      </span>
+                    )}
+                    {isDraft && (
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                        Draft
+                      </span>
+                    )}
+                    {!isReady && !isDraft && (
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 text-zinc-600 border border-zinc-200">
+                        Archived
+                      </span>
+                    )}
+                  </td>
+
+                  <!-- Action Buttons -->
+                  <td class="py-3.5 px-4 text-right">
+                    <div class="inline-flex items-center justify-end gap-2">
+                      <a
+                        href={`/p/${p.meta.proposal_id}`}
+                        class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 h-8 px-3 shadow-sm transition-colors"
+                      >
+                        Preview
+                      </a>
+
+                      {isExportable ? (
+                        <a
+                          href={`/p/${p.meta.proposal_id}/pdf`}
+                          class="inline-flex items-center justify-center gap-1 rounded-md text-xs font-medium bg-zinc-900 text-white hover:bg-zinc-800 h-8 px-3 shadow-sm transition-colors"
+                          download
+                        >
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                          </svg>
+                          <span>PDF</span>
+                        </a>
+                      ) : (
+                        <button
+                          disabled
+                          class="inline-flex items-center justify-center rounded-md text-xs font-medium bg-zinc-100 text-zinc-400 h-8 px-2.5 cursor-not-allowed border border-zinc-200"
+                          title={isDraft ? 'Export available only for Ready status' : 'Export blocked'}
+                        >
+                          {isDraft ? 'Draft' : 'Blocked'}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden py-16 px-4 text-center">
+        <div class="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto mb-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+        </div>
+        <h3 class="text-sm font-semibold text-zinc-900 mb-1">No proposals found</h3>
+        <p class="text-xs text-zinc-500">No proposals match your current filter or search criteria.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const searchInput = document.getElementById('search-input') as HTMLInputElement;
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const rows = document.querySelectorAll('.proposal-row');
+    const emptyState = document.getElementById('empty-state');
+    const refreshBtn = document.getElementById('btn-refresh-all');
+    const refreshSpinner = document.getElementById('refresh-spinner');
+
+    let currentFilter = 'all';
+
+    function applyFilterAndSearch() {
+      const query = (searchInput?.value || '').toLowerCase().trim();
+      let visibleCount = 0;
+
+      rows.forEach((row) => {
+        const el = row as HTMLElement;
+        const title = el.dataset.title || '';
+        const route = el.dataset.route || '';
+        const status = el.dataset.status || '';
+
+        const matchesQuery = !query || title.includes(query) || route.includes(query);
+        const matchesFilter =
+          currentFilter === 'all' ||
+          (currentFilter === 'ready' && status === 'ready') ||
+          (currentFilter === 'draft' && status === 'draft');
+
+        if (matchesQuery && matchesFilter) {
+          el.style.display = '';
+          visibleCount++;
+        } else {
+          el.style.display = 'none';
+        }
+      });
+
+      if (emptyState) {
+        emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+      }
+    }
+
+    searchInput?.addEventListener('input', applyFilterAndSearch);
+
+    filterTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        filterTabs.forEach((t) => {
+          t.classList.remove('bg-white', 'text-zinc-950', 'shadow-sm', 'font-semibold');
+          t.classList.add('text-zinc-600', 'font-medium');
+        });
+        tab.classList.remove('text-zinc-600', 'font-medium');
+        tab.classList.add('bg-white', 'text-zinc-950', 'shadow-sm', 'font-semibold');
+
+        currentFilter = (tab as HTMLElement).dataset.filter || 'all';
+        applyFilterAndSearch();
+      });
+    });
+
+    refreshBtn?.addEventListener('click', async () => {
+      if (refreshSpinner) refreshSpinner.classList.add('animate-spin');
+      try {
+        const res = await fetch('/api/refresh', { method: 'POST' });
+        if (res.ok) {
+          window.location.reload();
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          alert(`Failed to refresh Google Sheet data: ${errData.error || res.statusText}`);
+        }
+      } catch (err: any) {
+        alert(`Network error while refreshing: ${err?.message || 'Connection failed'}`);
+      } finally {
+        if (refreshSpinner) refreshSpinner.classList.remove('animate-spin');
+      }
+    });
+  </script>
+</body>
+</html>

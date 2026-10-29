@@ -1,0 +1,47 @@
+---
+interface Props {
+  termsHtml: string;
+}
+
+const { termsHtml } = Astro.props;
+---
+
+<div class="terms-section pt-[4mm] mb-[10mm] break-before-page">
+  <div class="terms-content text-[3.8mm] leading-[1.4] text-black">
+    <Fragment set:html={termsHtml} />
+  </div>
+</div>
+
+<style is:global>
+  .terms-section {
+    break-before: page;
+    page-break-before: always;
+  }
+  .terms-content h1 {
+    font-size: 8mm;
+    font-weight: 700;
+    margin-bottom: 5mm;
+    letter-spacing: -0.02em;
+  }
+  .terms-content h3 {
+    font-size: 4.2mm;
+    font-weight: 700;
+    margin-top: 4mm;
+    margin-bottom: 2mm;
+    color: #111;
+  }
+  .terms-content p {
+    margin-bottom: 2.5mm;
+  }
+  .terms-content ul {
+    list-style-type: disc;
+    padding-left: 6mm;
+    margin-bottom: 3.5mm;
+  }
+  .terms-content li {
+    margin-bottom: 1.5mm;
+  }
+  .terms-content strong {
+    font-weight: 600;
+  }
+</style>

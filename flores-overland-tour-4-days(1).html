@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flores Overland Tour 4 Days</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = { theme: { extend: {
+    colors: { green: '#78c24e', blue: '#1db8ee', red: '#cc0000' },
+    fontFamily: { sans: ['"DM Sans"', 'Helvetica', 'Arial', 'sans-serif'], display: ['Syne', '"DM Sans"', 'Helvetica', 'sans-serif'] }
+  } } };
+</script>
+<style>
+  @page { size: A4; margin: 0 }
+  @media print { * { -webkit-print-color-adjust: exact; print-color-adjust: exact } }
+  @media (max-width: 215mm) { body { zoom: .45 } }
+</style>
+</head>
+<body class="bg-[#d9dcd6] py-6 font-sans text-black print:bg-white print:py-0">
+<main id="doc"></main>
+
+<script>
+/* ============================================================
+   CONTENT — edit or replace this object (or load it from an
+   API / JSON file later). Everything on the page is rendered
+   from it. Leave an "image" empty to show a placeholder.
+   ============================================================ */
+const tour = {
+  site: { web: "tourfloreskomodo.com", phone: "+62 821-4473-7881", instagram: "nusaflorestravel" },
+  logo: "",                       // image URL for the logo (empty = text placeholder)
+  cover: { title: "FLORES OVERLAND TOUR 4 DAYS", image: "" },
+  general: {
+    heading: "GENERAL INFORMATION",
+    intro: [
+      "Please find your detailed tour quotation in the following pages. Thank you for choosing us at Nusa Flores Travel and we hope you will have a memorable journey.",
+      "If you find anything unpleasant during the trip, please do not hesitate to contact us and we will do everything we can to assist you."
+    ],
+    rows: [
+      ["Name of Tour", "Flores Overland Tour 4 Days"],
+      ["Type of Tour", "Private Tour (Minimum 2 People)"],
+      ["Date of Travel", "2026"],
+      ["Route", "Ende - Kelimutu - Bajawa - Ruteng - Labuan Bajo"]
+    ]
+  },
+  itineraryHeading: "TOUR ITINERARY",
+  days: [
+    { title: "DAY 01 - Journey to Moni", image: "", accommodation: "Accomodation : See Price List",
+      items: [
+        "Picked up at Ende Airport (ENE) Transfer to Moni. On the way stop over in Detusoko, rice field walk.",
+        "Visit Wologai Village ; a traditional village lived by Lionese",
+        "Stay and overnight at Lodge in Moni" ] },
+    { title: "DAY 02 - Kelimutu", image: "", accommodation: "Accomodation : See Price List",
+      items: [
+        "Seeing the Kelimutu Lakes at dawn is a truly magical experience. Up at 04:00 you will drive with your driver to the crater lakes through the base of the Kelimutu National Park and walk up to the lakes through early morning woodland.",
+        "Sip hot drinks while sunlight wakes the spiritual volcanic crater and learn about local beliefs and folklore. Then explore all three of the ever-changing coloured lakes. This is an unforgettable adventure.",
+        "Breakfast at lodge, loading luggage and check out. Drive to Penggajawa",
+        "Stop over in Blue stone Beach",
+        "Drive to Bajawa, Stay and overnight at Hotel in Bajawa." ] },
+    { title: "DAY 03 - Journey to Ruteng", image: "", accommodation: "Accomodation : See Price List",
+      items: [
+        "Breakfast at hotel and check out",
+        "First visit Wolobobo view point",
+        "Visit Bena Traditional VIllage ; meghalit village lived by Ngadanese tribe",
+        "Visit Malanage Hot Spring",
+        "Drive to Ruteng, on the way stop over to see arak; local wine distillation process",
+        "Stay and overnight at Hotel in Ruteng" ] },
+    { title: "DAY 04 - Journey to Labuan bajo", image: "", accommodation: "Accomodation : -",
+      items: [
+        "Breakfast at hotel and check out",
+        "Visit Cancar spider web rice field.",
+        "Drive to Todo, visit Todo Traditional village ; old Manggarai tribe village, These represent one of the oldest kingships, established when the Dutch chose the Todo Clan to rule over Manggarai",
+        "Drive to Labuan Bajo and tour finish." ] }
+  ],
+  price: {
+    heading: "PRICE INFORMATION",
+    columns: ["Type", "Price / Person", "Accomodation"],
+    options: [
+      { label: "OPTION #1", rows: [
+        { type: "Without Tour Guide", price: "IDR 5.000.000", stays: ["Bintang Lodge Moni - Day 1", "Silverin Hotel Bajawa - Day 2", "Sky Flores Hotel Ruteng - Day 3"] },
+        { type: "Include Tour Guide", price: "IDR 6.100.000", stays: ["Bintang Lodge Moni - Day 1", "Silverin Hotel Bajawa - Day 2", "Sky Flores Hotel Ruteng - Day 3"] } ] },
+      { label: "OPTION #2", rows: [
+        { type: "Without Tour Guide", price: "IDR 5.000.000", stays: ["Spring Hill Hotel Ruteng - Day 3", "Sabrina Rest and Living - Day 2", "Spring Hill Hotel Ruteng - Day 3"] },
+        { type: "Include Tour Guide", price: "IDR 6.100.000", stays: ["Ecolodge Moni - Day 1", "Sabrina Rest and Living - Day 2", "Spring Hill Hotel Ruteng - Day 3"] } ] }
+    ]
+  },
+  inclusions: {
+    heading: "INCLUDE & EXCLUDE",
+    include: { label: "Include", items: ["Private Car, driver and petrol", "Tour Guide", "Entrance fee", "Mineral water", "Accomodation 3 nights", "3x Breakfast at Hotel"] },
+    exclude: { label: "Exclude", items: ["Flight tickets", "Tour guide", "Lunch and dinner", "Optional tour"] }
+  }
+};
+
+/* ============================ RENDERER (Tailwind classes) ============================ */
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num = i => String(i + 1).padStart(2, "0");
+const ico = "w-[5.5mm] h-[5.5mm] fill-none stroke-white stroke-[1.6]";
+const icons = {
+  web: `<svg class="${ico}" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>`,
+  phone: `<svg class="${ico}" viewBox="0 0 24 24"><path d="M4 20l1.3-4.2A8.5 8.5 0 1 1 8.4 18.8z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 .8c-1-.4-2-1.4-2.4-2.4l.8-1-1-2z"/></svg>`,
+  ig: `<svg class="${ico}" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r=".6"/></svg>`
+};
+
+const H2 = "text-[9.5mm] font-bold tracking-tight mb-[5mm]";
+const TD = "border-[.5mm] border-black px-[4mm]";
+
+const footer = s => `
+  <div class="absolute inset-x-0 bottom-0 h-[11mm] bg-green flex justify-center items-center gap-[12mm] text-[4mm] text-white">
+    ${[["web", s.web], ["phone", s.phone], ["ig", s.instagram]].map(([i, t]) => `<span class="flex items-center gap-[2.5mm]">${icons[i]}${esc(t)}</span>`).join("")}
+  </div>`;
+
+const page = (inner, site, pad = "pt-[12mm] px-[9mm]") =>
+  `<section class="relative w-[210mm] h-[297mm] mx-auto mb-6 bg-white overflow-hidden print:m-0 print:break-after-page"><div class="${pad}">${inner}</div>${footer(site)}</section>`;
+
+const day = d => `
+  <div class="relative mb-[6mm] min-h-[44mm]">
+    <div class="inline-block bg-blue text-white font-bold text-[4mm] py-[2.8mm] pr-[4mm] pl-[13mm] -ml-[9mm] min-w-[140mm] rounded-r-[7mm] mb-[5mm]">${esc(d.title)}</div>
+    <ul class="w-[118mm] pl-[7mm] list-disc text-[3.7mm] leading-[1.3] mb-[5mm]">${d.items.map(i => `<li class="mb-[0.8mm]">${esc(i)}</li>`).join("")}</ul>
+    <div class="text-[3.9mm] ml-[1mm]">${esc(d.accommodation)}</div>
+    <div class="absolute -right-[1mm] top-[8mm] w-[48mm] h-[45mm] bg-[#f1f1ed] border border-[#ddd] shadow-[3mm_1.5mm_0_-1mm_#f6f6f3]">
+      <div class="absolute right-[3mm] -top-[3.5mm] w-[3mm] h-[9mm] border border-[#aaa] rounded-[2mm]"></div>
+      <div class="absolute inset-x-[3.5mm] top-[5mm] h-[34mm] bg-[#c9ced3] flex items-center justify-center text-[3mm] text-[#59616a]">
+        ${d.image ? `<img class="w-full h-full object-cover" src="${esc(d.image)}" alt="">` : "Photo placeholder"}
+      </div>
+    </div>
+  </div>`;
+
+const priceTable = (o, cols) => `
+  <div class="font-display text-[3.5mm] mt-[6mm] mb-[2.5mm]">${esc(o.label)}</div>
+  <table class="w-full border-collapse text-[3.7mm]">
+    <tr>${cols.map(c => `<th class="${TD} py-[3.5mm] h-[14mm] font-normal text-left">${esc(c)}</th>`).join("")}</tr>
+    ${o.rows.map(r => r.stays.map((s, i) => `<tr>${i === 0
+      ? `<td class="${TD} w-[45mm] text-center h-[13.5mm]" rowspan="${r.stays.length}">${esc(r.type)}</td><td class="${TD} w-[45mm]" rowspan="${r.stays.length}">${esc(r.price)}</td>` : ""}
+      <td class="${TD} h-[13.5mm]">${esc(s)}</td></tr>`).join("")).join("")}
+  </table>`;
+
+const list = (g, bg) => `
+  <div class="w-[84mm]"><h3 class="text-[4mm] font-bold mt-[5mm] mb-[8mm]">${esc(g.label)}</h3>
+    ${g.items.map((t, i) => `<div class="flex mb-[5mm] h-[11.5mm] text-[3.9mm] bg-[#f2f2f2]"><b class="${bg} w-[11.5mm] flex items-center justify-center text-white">${num(i)}</b><span class="pl-[4mm] flex items-center">${esc(t)}</span></div>`).join("")}
+  </div>`;
+
+function render(t) {
+  const S = t.site, d = t.days, g = t.general;
+  const cover = `
+    <section class="relative w-[210mm] h-[297mm] mx-auto mb-6 bg-white overflow-hidden print:m-0 print:break-after-page">
+      <div class="absolute left-[10mm] top-[9mm] right-[10mm] h-[196mm] rounded-[12mm] overflow-hidden bg-gradient-to-b from-[#8a94ad] via-[#f0a35a] to-[#7d8f88]">
+        ${t.cover.image ? `<img class="w-full h-full object-cover" src="${esc(t.cover.image)}" alt="">` : ""}
+      </div>
+      <div class="absolute left-[10mm] top-[9mm] w-[90mm] h-[46mm] bg-white rounded-br-[12mm] flex items-center justify-center">
+        ${t.logo ? `<img class="max-w-[75mm] max-h-[36mm]" src="${esc(t.logo)}" alt="Logo">`
+                 : `<div class="font-display font-extrabold text-[20mm] leading-none bg-gradient-to-r from-[#222] via-green to-blue bg-clip-text text-transparent">NFT</div>`}
+      </div>
+      <h1 class="absolute left-[12mm] right-[10mm] top-[217mm] text-[21mm] leading-[.98] font-medium tracking-tight">${esc(t.cover.title).replace(/(TOUR)/, "<br>$1")}</h1>
+      ${footer(S)}
+    </section>`;
+
+  const pages = [
+    page(`<h2 class="${H2}">${esc(g.heading)}</h2>
+          ${g.intro.map(p => `<p class="text-[4.1mm] leading-[1.15] mb-[5mm]">${esc(p)}</p>`).join("")}
+          <table class="w-full border-collapse text-[4.1mm]">${g.rows.map(r => `<tr><td class="${TD} w-[50mm] py-[5mm] h-[13.2mm]">${esc(r[0])}</td><td class="${TD} py-[5mm]">${esc(r[1])}</td></tr>`).join("")}</table>
+          <h2 class="${H2} mt-[12mm]">${esc(t.itineraryHeading)}</h2>
+          ${d.slice(0, 2).map(day).join("")}`, S),
+    page(d.slice(2).map(day).join(""), S, "pt-[8mm] px-[9mm]"),
+    page(`<h2 class="${H2} font-display font-extrabold">${esc(t.price.heading)}</h2>${t.price.options.map(o => priceTable(o, t.price.columns)).join("")}`, S, "pt-[12mm] px-[14mm]"),
+    page(`<h2 class="${H2}">${esc(t.inclusions.heading)}</h2><div class="flex gap-[23mm]">${list(t.inclusions.include, "bg-green")}${list(t.inclusions.exclude, "bg-red")}</div>`, S)
+  ];
+  document.getElementById("doc").innerHTML = cover + pages.join("");
+}
+render(tour);
+</script>
+</body>
+</html>
