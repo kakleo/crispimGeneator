@@ -18,10 +18,16 @@ if (!proposal_id) {
 }
 
 // Fetch sheet data (with caching)
-const { data, isStale, lastUpdated } = await fetchSheetData();
-const termsHtml = getTermsHtml();
+let proposal: ReturnType<typeof validateAndParseProposal> | null = null;
 
-const proposal = validateAndParseProposal(proposal_id, data, termsHtml, isStale);
+try {
+  const { data, isStale } = await fetchSheetData();
+  const termsHtml = getTermsHtml();
+  proposal = validateAndParseProposal(proposal_id, data, termsHtml, isStale);
+} catch (err: any) {
+  console.error(`Error loading proposal "${proposal_id}":`, err);
+  return new Response(`Failed to load proposal "${proposal_id}": ${err?.message || err}`, { status: 500 });
+}
 
 if (!proposal) {
   return new Response(`Proposal "${proposal_id}" not found in sheet`, { status: 404 });

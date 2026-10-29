@@ -1,11 +1,12 @@
 import fs from 'fs';
 import path from 'path';
-import { google } from 'googleapis';
 import type { SheetData, RawRow } from '../schema/types';
 import { sheetCache } from './cache';
 import { DEFAULT_FIXTURES } from './fixtures';
 
-function getAppsScriptUrl(): string | undefined {
+const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyCtZEuHNy4zcMdcohNFBifG2kTqV8aBpS2B0PgBTSTNJQM08vjYb2t4zxzhTb2KD8/exec';
+
+function getAppsScriptUrl(): string {
   if (process.env.GOOGLE_APPS_SCRIPT_URL && process.env.GOOGLE_APPS_SCRIPT_URL.trim()) {
     return process.env.GOOGLE_APPS_SCRIPT_URL.trim();
   }
@@ -25,7 +26,7 @@ function getAppsScriptUrl(): string | undefined {
     // ignore
   }
 
-  return undefined;
+  return DEFAULT_APPS_SCRIPT_URL;
 }
 
 const TAB_PROPOSALS = process.env.TAB_PROPOSALS || 'Proposals';
@@ -132,6 +133,7 @@ export async function fetchSheetData(forceRefresh: boolean = false): Promise<{
 
   if (clientEmail && privateKey && spreadsheetId) {
     try {
+      const { google } = await import('googleapis');
       const auth = new google.auth.JWT({
         email: clientEmail,
         key: privateKey,
@@ -236,6 +238,7 @@ export async function checkSheetsHealth(): Promise<{ ok: boolean; message: strin
 
   if (clientEmail && privateKey && spreadsheetId) {
     try {
+      const { google } = await import('googleapis');
       const auth = new google.auth.JWT({
         email: clientEmail,
         key: privateKey.replace(/\\n/g, '\n'),

@@ -48,7 +48,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // Page requests redirect to /login with sanitized next parameter
     const nextPath = sanitizeNextUrl(url.pathname + url.search);
-    return redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+    const loginTarget = nextPath === '/' ? '/login' : `/login?next=${encodeURIComponent(nextPath)}`;
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: loginTarget,
+      },
+    });
   }
 
   // Set user on locals for pages/components to access if needed

@@ -1,4 +1,4 @@
-import { defineConfig } from 'astro/config';
+import { defineConfig, passthroughImageService } from 'astro/config';
 import vercel from '@astrojs/vercel';
 import node from '@astrojs/node';
 import tailwind from '@astrojs/tailwind';
@@ -11,6 +11,9 @@ export default defineConfig({
   output: 'server',
   security: {
     checkOrigin: false,
+  },
+  image: {
+    service: passthroughImageService(),
   },
   adapter: isNodeTarget
     ? node({ mode: 'standalone' })
