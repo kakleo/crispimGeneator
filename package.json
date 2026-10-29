@@ -17,6 +17,7 @@
   "dependencies": {
     "@astrojs/node": "^9.5.5",
     "@astrojs/tailwind": "^6.0.2",
+    "@astrojs/vercel": "^8.2.11",
     "@types/bcryptjs": "^2.4.6",
     "@types/marked": "^5.0.2",
     "@types/sanitize-html": "^2.16.2",

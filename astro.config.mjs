@@ -1,6 +1,10 @@
 import { defineConfig } from 'astro/config';
+import vercel from '@astrojs/vercel';
 import node from '@astrojs/node';
 import tailwind from '@astrojs/tailwind';
+
+// Default to Vercel adapter (used in production on Vercel), allow node fallback if specified
+const isNodeTarget = process.env.BUILD_TARGET === 'node';
 
 // https://astro.build/config
 export default defineConfig({
@@ -8,9 +12,9 @@ export default defineConfig({
   security: {
     checkOrigin: false,
   },
-  adapter: node({
-    mode: 'standalone',
-  }),
+  adapter: isNodeTarget
+    ? node({ mode: 'standalone' })
+    : vercel(),
   integrations: [
     tailwind(),
   ],

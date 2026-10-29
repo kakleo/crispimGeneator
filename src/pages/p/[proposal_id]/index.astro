@@ -180,5 +180,13 @@ const { meta, settings, itinerary, pricingOptions, inclusions, extraInfoRows, in
       <Footer settings={settings} />
     </section>
   </div>
+
+  <script>
+    if (new URLSearchParams(window.location.search).get('autoprint') === '1') {
+      window.addEventListener('load', () => {
+        setTimeout(() => window.print(), 600);
+      });
+    }
+  </script>
 </body>
 </html>

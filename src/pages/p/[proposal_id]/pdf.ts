@@ -84,10 +84,26 @@ export const GET: APIRoute = async ({ params, request, cookies, url }) => {
     });
   } catch (error: any) {
     console.error('PDF Generation Error:', error);
+    // If running in an environment without headless Chromium (e.g. serverless Vercel function without custom binary),
+    // redirect to the preview page with autoprint enabled so the browser generates the identical PDF seamlessly (FR-23)
+    const errMsg = error?.message || String(error);
+    if (
+      errMsg.includes('Could not find Chrome') ||
+      errMsg.includes('spawn') ||
+      errMsg.includes('chromium') ||
+      errMsg.includes('Executable does not exist')
+    ) {
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: `/p/${proposalId}?autoprint=1`,
+        },
+      });
+    }
     return new Response(
       JSON.stringify({
-        error: 'Failed to generate PDF document',
-        details: error?.message || String(error),
+        error: 'Failed to generate PDF document. Please use the Print button on the preview page.',
+        details: errMsg,
       }),
       {
         status: 500,
