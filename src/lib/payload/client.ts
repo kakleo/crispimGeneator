@@ -1,6 +1,6 @@
 import { getPayload } from 'payload';
-import { pushDevSchema } from '@payloadcms/drizzle';
 import config from '@payload-config';
+import { ensureDatabaseSchema } from './init-schema';
 import type {
   ProposalDocument,
   PricingOptionGroup,
@@ -21,19 +21,14 @@ export async function getPayloadClient() {
   if (!payloadInstance) {
     payloadInstance = await getPayload({ config });
 
-    // Ensure database tables exist (push schema if not yet initialized)
+    // 1. Ensure all database tables and indexes exist (works on Turso, Vercel /tmp, and local SQLite)
     try {
-      await payloadInstance.find({ collection: 'proposals', limit: 1 });
+      await ensureDatabaseSchema(payloadInstance.db);
     } catch (err: any) {
-      console.log('[Payload] Tables missing, pushing schema with pushDevSchema...');
-      try {
-        await pushDevSchema(payloadInstance.db);
-        console.log('[Payload] Schema pushed successfully!');
-      } catch (pushErr) {
-        console.error('[Payload] Failed to push schema:', pushErr);
-      }
+      console.error('[Payload] Schema initialization error:', err);
     }
 
+    // 2. Ensure initial seed proposal exists
     await seedInitialData(payloadInstance);
   }
   return payloadInstance;
