@@ -13,6 +13,7 @@ import {
   Info,
   Loader2,
   Hotel,
+  ExternalLink,
 } from 'lucide-react';
 
 export interface DayInput {
@@ -324,12 +325,26 @@ export default function ProposalEditorModal({
               Data is saved and managed directly in your Payload CMS database.
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {formData.proposal_id && (
+              <a
+                href={`/p/${formData.proposal_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 rounded-md transition shadow-2xs"
+                title="Preview proposal in new tab"
+              >
+                <span>Preview</span>
+                <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+              </a>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -412,7 +427,21 @@ export default function ProposalEditorModal({
                     className="w-full px-3 py-2 text-xs border border-zinc-300 rounded-md shadow-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none font-mono"
                   />
                   <p className="text-[11px] text-zinc-400 mt-1">
-                    Public URL: /p/{formData.proposal_id || 'slug'}
+                    Public URL:{' '}
+                    {formData.proposal_id ? (
+                      <a
+                        href={`/p/${formData.proposal_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-zinc-600 hover:text-emerald-700 underline font-mono inline-flex items-center gap-0.5"
+                        title="Open preview in new tab"
+                      >
+                        /p/{formData.proposal_id}
+                        <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
+                      </a>
+                    ) : (
+                      <span className="font-mono">/p/slug</span>
+                    )}
                     {isEditMode && originalSlug && originalSlug !== formData.proposal_id && (
                       <span className="text-amber-600 block mt-0.5">
                         Will rename slug from "{originalSlug}" to "{formData.proposal_id}"
@@ -827,6 +856,18 @@ export default function ProposalEditorModal({
             </span>
 
             <div className="flex items-center gap-2">
+              {formData.proposal_id && (
+                <a
+                  href={`/p/${formData.proposal_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 rounded-md transition shadow-2xs"
+                  title="Open preview in new tab"
+                >
+                  <span>Preview in New Tab</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                </a>
+              )}
               <button
                 type="button"
                 onClick={onClose}

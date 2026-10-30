@@ -424,6 +424,8 @@ export default function ProposalListTable({
                         <div className="flex items-center gap-2">
                           <a
                             href={`/p/${p.meta.proposal_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="font-semibold text-zinc-900 hover:text-emerald-700 transition-colors line-clamp-1"
                           >
                             {p.meta.title}
@@ -482,13 +484,16 @@ export default function ProposalListTable({
                       {/* Action Buttons */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="inline-flex items-center justify-end gap-1.5">
-                          {/* Preview Button */}
+                          {/* Preview Button (Open in new tab) */}
                           <a
                             href={`/p/${p.meta.proposal_id}`}
-                            className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 h-8 px-2.5 shadow-2xs transition-colors"
-                            title="Preview proposal document"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1 rounded-md text-xs font-medium border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 h-8 px-2.5 shadow-2xs transition-colors"
+                            title="Preview proposal in new tab"
                           >
-                            Preview
+                            <span>Preview</span>
+                            <ExternalLink className="w-3 h-3 text-zinc-400" />
                           </a>
 
                           {/* PDF Download Button */}
