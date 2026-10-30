@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Plus,
@@ -105,6 +105,16 @@ export default function ProposalEditorModal({
   isEditMode = false,
 }: ProposalEditorModalProps) {
   const [formData, setFormData] = useState<ProposalFormData>(initialData || DEFAULT_FORM);
+  const [originalSlug, setOriginalSlug] = useState<string>(initialData?.proposal_id || '');
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(initialData || DEFAULT_FORM);
+      setOriginalSlug(initialData?.proposal_id || '');
+      setError(null);
+      setActiveTab('general');
+    }
+  }, [isOpen, initialData]);
   const [activeTab, setActiveTab] = useState<'general' | 'itinerary' | 'pricing' | 'inclusions'>(
     'general'
   );
@@ -261,8 +271,9 @@ export default function ProposalEditorModal({
 
     setSubmitting(true);
     try {
+      const targetSlug = isEditMode && originalSlug ? originalSlug : formData.proposal_id;
       const url = isEditMode
-        ? `/api/proposals/${encodeURIComponent(formData.proposal_id)}`
+        ? `/api/proposals/${encodeURIComponent(targetSlug)}`
         : '/api/proposals';
       const method = isEditMode ? 'PUT' : 'POST';
 
@@ -379,15 +390,21 @@ export default function ProposalEditorModal({
                   <input
                     type="text"
                     required
-                    disabled={isEditMode}
                     value={formData.proposal_id}
                     onChange={(e) =>
                       updateField('proposal_id', e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))
                     }
                     placeholder="e.g. komodo-island-3d"
-                    className="w-full px-3 py-2 text-xs border border-zinc-300 rounded-md shadow-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none disabled:bg-zinc-100 font-mono"
+                    className="w-full px-3 py-2 text-xs border border-zinc-300 rounded-md shadow-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none font-mono"
                   />
-                  <p className="text-[11px] text-zinc-400 mt-1">Used in URL: /p/{formData.proposal_id || 'slug'}</p>
+                  <p className="text-[11px] text-zinc-400 mt-1">
+                    Public URL: /p/{formData.proposal_id || 'slug'}
+                    {isEditMode && originalSlug && originalSlug !== formData.proposal_id && (
+                      <span className="text-amber-600 block mt-0.5">
+                        Will rename slug from "{originalSlug}" to "{formData.proposal_id}"
+                      </span>
+                    )}
+                  </p>
                 </div>
 
                 <div>

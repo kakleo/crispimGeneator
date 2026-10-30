@@ -217,6 +217,15 @@ export async function updateProposalInPayload(slug: string, data: any) {
   if (!existing) {
     throw new Error(`Proposal with slug "${slug}" not found`);
   }
+
+  // If slug is being changed, check that new slug is not already used by another proposal
+  if (data.proposal_id && data.proposal_id !== slug) {
+    const conflicting = await getRawProposalBySlug(data.proposal_id);
+    if (conflicting && conflicting.id !== existing.id) {
+      throw new Error(`Proposal ID "${data.proposal_id}" is already used by another proposal. Please choose a unique slug.`);
+    }
+  }
+
   return payload.update({
     collection: 'proposals',
     id: existing.id,
