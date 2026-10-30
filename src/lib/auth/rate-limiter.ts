@@ -8,8 +8,8 @@ interface RateRecord {
 }
 
 const windowMs = 15 * 60 * 1000; // 15 minutes
-const maxFailures = 5;
-const lockDurationMs = 15 * 60 * 1000; // 15 minutes lock
+const maxFailures = 10;
+const lockDurationMs = 60 * 1000; // 1 minute lockout on excessive failures
 
 const ipRecords = new Map<string, RateRecord>();
 

