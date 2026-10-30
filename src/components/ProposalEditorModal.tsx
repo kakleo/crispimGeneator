@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { ProposalStatus, normalizeStatus } from '@/lib/schema/types';
 import {
   X,
   Plus,
@@ -37,7 +38,7 @@ export interface PricingOptionInput {
 export interface ProposalFormData {
   proposal_id: string;
   title: string;
-  status: 'draft' | 'ready' | 'archived';
+  status: ProposalStatus;
   version: string;
   cover_image_url: string;
   tour_type: string;
@@ -97,6 +98,14 @@ const DEFAULT_FORM: ProposalFormData = {
   exclusions: 'Flight tickets\nLunch and dinner\nOptional tour',
 };
 
+const getInitialForm = (data?: ProposalFormData | null): ProposalFormData => {
+  if (!data) return DEFAULT_FORM;
+  return {
+    ...data,
+    status: normalizeStatus(data.status),
+  };
+};
+
 export default function ProposalEditorModal({
   isOpen,
   onClose,
@@ -104,12 +113,12 @@ export default function ProposalEditorModal({
   initialData,
   isEditMode = false,
 }: ProposalEditorModalProps) {
-  const [formData, setFormData] = useState<ProposalFormData>(initialData || DEFAULT_FORM);
+  const [formData, setFormData] = useState<ProposalFormData>(() => getInitialForm(initialData));
   const [originalSlug, setOriginalSlug] = useState<string>(initialData?.proposal_id || '');
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(initialData || DEFAULT_FORM);
+      setFormData(getInitialForm(initialData));
       setOriginalSlug(initialData?.proposal_id || '');
       setError(null);
       setActiveTab('general');
@@ -277,10 +286,15 @@ export default function ProposalEditorModal({
         : '/api/proposals';
       const method = isEditMode ? 'PUT' : 'POST';
 
+      const payloadToSave = {
+        ...formData,
+        status: normalizeStatus(formData.status),
+      };
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payloadToSave),
       });
 
       const resData = await res.json().catch(() => ({}));
@@ -410,8 +424,8 @@ export default function ProposalEditorModal({
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 mb-1">Status</label>
                   <select
-                    value={formData.status}
-                    onChange={(e) => updateField('status', e.target.value)}
+                    value={normalizeStatus(formData.status)}
+                    onChange={(e) => updateField('status', normalizeStatus(e.target.value))}
                     className="w-full px-3 py-2 text-xs border border-zinc-300 rounded-md shadow-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none bg-white"
                   >
                     <option value="draft">Draft (Editing in progress)</option>

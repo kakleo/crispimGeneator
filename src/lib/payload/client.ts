@@ -1,10 +1,11 @@
 import { getPayload } from 'payload';
 import config from '@payload-config';
 import { ensureDatabaseSchema } from './init-schema';
-import type {
+import {
   ProposalDocument,
   PricingOptionGroup,
   ItineraryDay,
+  normalizeStatus,
 } from '../schema/types';
 import { getSiteSettings } from '../settings';
 import { getTermsHtml } from '../terms';
@@ -162,7 +163,7 @@ export function payloadDocToProposalDocument(doc: any): ProposalDocument {
   return {
     meta: {
       proposal_id: String(doc.proposal_id || '').trim(),
-      status: doc.status || 'draft',
+      status: normalizeStatus(doc.status),
       version: doc.version || 'v1',
       title: String(doc.title || 'Untitled Tour Proposal'),
       cover_image_url: doc.cover_image_url || undefined,
@@ -205,9 +206,13 @@ export async function getProposalDocumentBySlug(slug: string): Promise<ProposalD
 
 export async function createProposalInPayload(data: any) {
   const payload = await getPayloadClient();
+  const payloadData = {
+    ...data,
+    status: normalizeStatus(data.status),
+  };
   return payload.create({
     collection: 'proposals',
-    data,
+    data: payloadData,
   });
 }
 
@@ -226,10 +231,15 @@ export async function updateProposalInPayload(slug: string, data: any) {
     }
   }
 
+  const payloadData = {
+    ...data,
+    ...(data.status ? { status: normalizeStatus(data.status) } : {}),
+  };
+
   return payload.update({
     collection: 'proposals',
     id: existing.id,
-    data,
+    data: payloadData,
   });
 }
 
@@ -278,7 +288,7 @@ export async function duplicateProposalInPayload(sourceSlug: string): Promise<an
   const duplicateData = {
     proposal_id: newSlug,
     title: newTitle,
-    status: 'draft',
+    status: normalizeStatus(source.status),
     version: source.version ? `${source.version}-copy` : 'v1',
     cover_image_url: source.cover_image_url || '',
     tour_type: source.tour_type || '',

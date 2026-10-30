@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { ProposalDocument } from '@/lib/schema/types';
+import { ProposalDocument, normalizeStatus } from '@/lib/schema/types';
 import { RefreshCw, Printer, Download, ArrowLeft, AlertCircle, AlertTriangle } from 'lucide-react';
 
 interface ToolbarProps {
@@ -10,8 +10,9 @@ interface ToolbarProps {
 
 export default function Toolbar({ proposal }: ToolbarProps) {
   const { meta, validation, isStale, lastUpdated } = proposal;
-  const isExportable = validation.isValid && meta.status !== 'archived';
-  const isDraft = meta.status === 'draft';
+  const status = normalizeStatus(meta.status);
+  const isExportable = validation.isValid && status !== 'archived';
+  const isDraft = status === 'draft';
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -60,19 +61,19 @@ export default function Toolbar({ proposal }: ToolbarProps) {
           </div>
 
           {/* Status Badge */}
-          {meta.status === 'ready' && (
+          {status === 'ready' && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               Ready
             </span>
           )}
-          {meta.status === 'draft' && (
+          {status === 'draft' && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
               Draft
             </span>
           )}
-          {meta.status === 'archived' && (
+          {status === 'archived' && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
               <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
               Archived

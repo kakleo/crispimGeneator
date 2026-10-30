@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import type { ProposalDocument } from '@/lib/schema/types';
+import { ProposalDocument, normalizeStatus } from '@/lib/schema/types';
 import {
   Search,
   RefreshCw,
@@ -37,6 +37,7 @@ export default function ProposalListTable({
   const [filter, setFilter] = useState<'all' | 'ready' | 'draft'>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [duplicatingSlug, setDuplicatingSlug] = useState<string | null>(null);
+  const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -46,11 +47,11 @@ export default function ProposalListTable({
   const [isEditMode, setIsEditMode] = useState(false);
 
   const readyCount = useMemo(
-    () => proposals.filter((p) => p.meta.status === 'ready').length,
+    () => proposals.filter((p) => normalizeStatus(p.meta?.status) === 'ready').length,
     [proposals]
   );
   const draftCount = useMemo(
-    () => proposals.filter((p) => p.meta.status === 'draft').length,
+    () => proposals.filter((p) => normalizeStatus(p.meta?.status) === 'draft').length,
     [proposals]
   );
 
@@ -60,7 +61,7 @@ export default function ProposalListTable({
       const title = (p.meta?.title || '').toLowerCase();
       const route = (p.meta?.route || '').toLowerCase();
       const slug = (p.meta?.proposal_id || '').toLowerCase();
-      const status = p.meta?.status || 'draft';
+      const status = normalizeStatus(p.meta?.status);
 
       const matchesSearch = !q || title.includes(q) || route.includes(q) || slug.includes(q);
       const matchesFilter =
@@ -126,6 +127,7 @@ export default function ProposalListTable({
 
   // Open Edit Modal Handler
   const handleEdit = async (slug: string) => {
+    setEditingSlug(slug);
     try {
       const res = await fetch(`/api/proposals/${encodeURIComponent(slug)}`);
       const data = await res.json().catch(() => ({}));
@@ -134,19 +136,23 @@ export default function ProposalListTable({
       }
 
       const raw = data.proposal;
+      const matched = proposals.find((x) => x.meta?.proposal_id === slug);
+      const rawStatus = raw.status || matched?.meta?.status || 'draft';
+      const status = normalizeStatus(rawStatus);
+
       const formattedData: ProposalFormData = {
-        proposal_id: raw.proposal_id,
-        title: raw.title || '',
-        status: raw.status || 'draft',
-        version: raw.version || 'v1',
-        cover_image_url: raw.cover_image_url || '',
-        tour_type: raw.tour_type || 'Private Tour',
-        travel_date: raw.travel_date ? String(raw.travel_date) : '',
-        route: raw.route || '',
-        intro_text: raw.intro_text || '',
-        extra_info: raw.extra_info || '',
-        custom_html: raw.custom_html || '',
-        itinerary: Array.isArray(raw.itinerary)
+        proposal_id: raw.proposal_id || slug,
+        title: raw.title || matched?.meta?.title || '',
+        status,
+        version: raw.version || matched?.meta?.version || 'v1',
+        cover_image_url: raw.cover_image_url || matched?.meta?.cover_image_url || '',
+        tour_type: raw.tour_type || matched?.meta?.tour_type || 'Private Tour',
+        travel_date: raw.travel_date ? String(raw.travel_date) : (matched?.meta?.travel_date || ''),
+        route: raw.route || matched?.meta?.route || '',
+        intro_text: raw.intro_text || matched?.meta?.intro_text || '',
+        extra_info: raw.extra_info || matched?.meta?.extra_info || '',
+        custom_html: raw.custom_html || matched?.meta?.custom_html || '',
+        itinerary: Array.isArray(raw.itinerary) && raw.itinerary.length > 0
           ? raw.itinerary.map((d: any, idx: number) => ({
               day_no: Number(d.day_no || idx + 1),
               day_title: String(d.day_title || `Day ${idx + 1}`),
@@ -154,8 +160,14 @@ export default function ProposalListTable({
               accommodation_note: String(d.accommodation_note || ''),
               image_url: String(d.image_url || ''),
             }))
-          : [],
-        pricing: Array.isArray(raw.pricing)
+          : (matched?.itinerary || []).map((d) => ({
+              day_no: d.day_no,
+              day_title: d.day_title,
+              items: d.items.join('\n'),
+              accommodation_note: d.accommodation_note || '',
+              image_url: d.image_url || '',
+            })),
+        pricing: Array.isArray(raw.pricing) && raw.pricing.length > 0
           ? raw.pricing.map((opt: any) => ({
               option_label: String(opt.option_label || 'OPTION #1'),
               stays: Array.isArray(opt.stays) ? opt.stays.join('\n') : String(opt.stays || ''),
@@ -165,13 +177,21 @@ export default function ProposalListTable({
                 currency: String(r.currency || 'IDR'),
               })),
             }))
-          : [],
+          : (matched?.pricingOptions || []).map((opt) => ({
+              option_label: opt.label,
+              stays: opt.rows[0]?.stays?.join('\n') || '',
+              rows: opt.rows.map((r) => ({
+                row_type: r.type,
+                price_amount: r.rawPrice || 0,
+                currency: r.currency || 'IDR',
+              })),
+            })),
         inclusions: Array.isArray(raw.inclusions)
           ? raw.inclusions.join('\n')
-          : String(raw.inclusions || ''),
+          : (typeof raw.inclusions === 'string' ? raw.inclusions : (matched?.inclusions?.include || []).join('\n')),
         exclusions: Array.isArray(raw.exclusions)
           ? raw.exclusions.join('\n')
-          : String(raw.exclusions || ''),
+          : (typeof raw.exclusions === 'string' ? raw.exclusions : (matched?.inclusions?.exclude || []).join('\n')),
       };
 
       setEditingData(formattedData);
@@ -179,6 +199,8 @@ export default function ProposalListTable({
       setIsModalOpen(true);
     } catch (err: any) {
       alert(`Error loading proposal: ${err?.message}`);
+    } finally {
+      setEditingSlug(null);
     }
   };
 
@@ -385,8 +407,9 @@ export default function ProposalListTable({
               </thead>
               <tbody className="divide-y divide-zinc-200/70">
                 {filteredProposals.map((p) => {
-                  const isReady = p.meta.status === 'ready';
-                  const isDraft = p.meta.status === 'draft';
+                  const status = normalizeStatus(p.meta?.status);
+                  const isReady = status === 'ready';
+                  const isDraft = status === 'draft';
                   const isExportable = isReady && p.validation.isValid;
                   const isDuplicating = duplicatingSlug === p.meta.proposal_id;
                   const isDeleting = deletingSlug === p.meta.proposal_id;
@@ -507,10 +530,15 @@ export default function ProposalListTable({
                           {/* Edit Button */}
                           <button
                             onClick={() => handleEdit(p.meta.proposal_id)}
-                            className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 h-8 px-2.5 shadow-2xs transition-colors"
+                            disabled={editingSlug === p.meta.proposal_id}
+                            className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 h-8 px-2.5 shadow-2xs transition-colors disabled:opacity-50"
                             title="Edit proposal in visual form"
                           >
-                            <Edit3 className="w-3.5 h-3.5 text-zinc-600" />
+                            {editingSlug === p.meta.proposal_id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-600" />
+                            ) : (
+                              <Edit3 className="w-3.5 h-3.5 text-zinc-600" />
+                            )}
                             <span className="hidden lg:inline ml-1">Edit</span>
                           </button>
 
@@ -560,8 +588,12 @@ export default function ProposalListTable({
 
       {/* Proposal Editor / Creator Modal */}
       <ProposalEditorModal
+        key={editingData ? editingData.proposal_id : (isModalOpen ? 'create' : 'closed')}
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingData(null);
+        }}
         onSaved={reloadProposals}
         initialData={editingData}
         isEditMode={isEditMode}

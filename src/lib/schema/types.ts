@@ -1,5 +1,12 @@
 export type ProposalStatus = 'draft' | 'ready' | 'archived';
 
+export function normalizeStatus(val: unknown): ProposalStatus {
+  const s = String(val || '').toLowerCase().trim();
+  if (s === 'ready') return 'ready';
+  if (s === 'archived') return 'archived';
+  return 'draft';
+}
+
 export interface RawRow {
   [key: string]: any;
 }
