@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchSheetData } from '@/lib/sheets/client';
-import { getTermsHtml } from '@/lib/terms';
-import { validateAndParseProposal } from '@/lib/schema/validator';
+import { getProposalDocumentBySlug } from '@/lib/payload/client';
 import { generateProposalPdf, computeDataHash } from '@/lib/pdf';
 import { COOKIE_NAME } from '@/lib/auth';
 
@@ -9,19 +7,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { proposal_id: string } }
+  { params }: { params: Promise<{ proposal_id: string }> }
 ) {
-  const proposalId = params.proposal_id;
+  const { proposal_id: proposalId } = await params;
 
   if (!proposalId) {
     return NextResponse.json({ error: 'Missing proposal ID' }, { status: 400 });
   }
 
-  // Fetch sheet data
-  const { data, isStale } = await fetchSheetData();
-  const termsHtml = getTermsHtml();
-
-  const proposal = validateAndParseProposal(proposalId, data, termsHtml, isStale);
+  const proposal = await getProposalDocumentBySlug(proposalId);
 
   if (!proposal) {
     return NextResponse.json(
@@ -30,7 +24,7 @@ export async function GET(
     );
   }
 
-  // FR-31: Blocking errors prevent PDF export
+  // Blocking errors prevent PDF export
   if (!proposal.validation.isValid) {
     return NextResponse.json(
       {
@@ -41,7 +35,7 @@ export async function GET(
     );
   }
 
-  // FR-3: Archived proposals cannot be exported
+  // Archived proposals cannot be exported
   if (proposal.meta.status === 'archived') {
     return NextResponse.json(
       { error: 'Archived proposals cannot be exported.' },
@@ -64,7 +58,6 @@ export async function GET(
       sessionCookie,
     });
 
-    // Filename format: {proposal_id}-{YYYY-MM-DD}.pdf (FR-21)
     const today = new Date().toISOString().split('T')[0];
     const versionPart = proposal.meta.version ? `-${proposal.meta.version}` : '';
     const filename = `${proposalId}${versionPart}-${today}.pdf`;
@@ -79,8 +72,6 @@ export async function GET(
     });
   } catch (error: any) {
     console.error('PDF Generation Error:', error);
-    // If running in an environment without headless Chromium (e.g. serverless Vercel function without custom binary),
-    // redirect to the preview page with autoprint enabled so the browser generates the identical PDF seamlessly (FR-23)
     const errMsg = error?.message || String(error);
     if (
       errMsg.includes('Could not find Chrome') ||

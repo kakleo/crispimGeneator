@@ -1,8 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { fetchSheetData } from '@/lib/sheets/client';
-import { getTermsHtml } from '@/lib/terms';
-import { validateAndParseProposal } from '@/lib/schema/validator';
+import { getProposalDocumentBySlug } from '@/lib/payload/client';
 import Toolbar from '@/components/Toolbar';
 import Cover from '@/components/Cover';
 import GeneralInfo from '@/components/GeneralInfo';
@@ -16,27 +14,27 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 interface PageProps {
-  params: {
+  params: Promise<{
     proposal_id: string;
-  };
-  searchParams?: {
+  }>;
+  searchParams?: Promise<{
     autoprint?: string;
-  };
+  }>;
 }
 
 export default async function ProposalPreviewPage({ params, searchParams }: PageProps) {
-  const proposalId = params.proposal_id;
-  if (!proposalId) {
+  const { proposal_id } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+
+  if (!proposal_id) {
     notFound();
   }
 
   let proposal = null;
   try {
-    const { data, isStale } = await fetchSheetData();
-    const termsHtml = getTermsHtml();
-    proposal = validateAndParseProposal(proposalId, data, termsHtml, isStale);
+    proposal = await getProposalDocumentBySlug(proposal_id);
   } catch (err: any) {
-    console.error(`Error loading proposal "${proposalId}":`, err);
+    console.error(`Error loading proposal "${proposal_id}":`, err);
     throw new Error(`Failed to load proposal: ${err?.message || err}`);
   }
 
@@ -125,7 +123,7 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
       </div>
 
       {/* Autoprint handler if triggered from /pdf fallback */}
-      {searchParams?.autoprint === '1' && (
+      {resolvedSearchParams?.autoprint === '1' && (
         <script
           dangerouslySetInnerHTML={{
             __html: `

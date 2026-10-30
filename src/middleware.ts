@@ -11,7 +11,7 @@ const PUBLIC_EXACT_PATHS = new Set([
   '/favicon.ico',
 ]);
 
-const PUBLIC_PREFIXES = ['/_next/', '/fonts/'];
+const PUBLIC_PREFIXES = ['/_next/', '/fonts/', '/admin'];
 
 function isPublicAsset(pathname: string): boolean {
   if (PUBLIC_EXACT_PATHS.has(pathname)) return true;

@@ -1,23 +1,31 @@
 import { NextResponse } from 'next/server';
-import { checkSheetsHealth } from '@/lib/sheets/client';
+import { getPayloadClient } from '@/lib/payload/client';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const sheetsHealth = await checkSheetsHealth();
+  let payloadOk = false;
+  let payloadMessage = 'Payload CMS connected';
+
+  try {
+    const payload = await getPayloadClient();
+    payloadOk = !!payload;
+  } catch (err: any) {
+    payloadMessage = err?.message || 'Payload error';
+  }
 
   const responsePayload = {
-    status: sheetsHealth.ok ? 'ok' : 'degraded',
+    status: payloadOk ? 'ok' : 'degraded',
     service: 'tour-proposal-generator',
     timestamp: new Date().toISOString(),
-    sheets: {
-      status: sheetsHealth.ok ? 'connected' : 'error',
-      mode: sheetsHealth.mode,
-      message: sheetsHealth.message,
+    database: {
+      provider: 'payload-cms-sqlite',
+      status: payloadOk ? 'connected' : 'error',
+      message: payloadMessage,
     },
   };
 
   return NextResponse.json(responsePayload, {
-    status: sheetsHealth.ok ? 200 : 503,
+    status: payloadOk ? 200 : 503,
   });
 }
