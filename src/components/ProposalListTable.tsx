@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ProposalDocument, normalizeStatus } from '@/lib/schema/types';
+import { ProposalDocument, normalizeStatus, normalizeImageUrl } from '@/lib/schema/types';
 import {
   Search,
   RefreshCw,
@@ -145,7 +145,7 @@ export default function ProposalListTable({
         title: raw.title || matched?.meta?.title || '',
         status,
         version: raw.version || matched?.meta?.version || 'v1',
-        cover_image_url: raw.cover_image_url || matched?.meta?.cover_image_url || '',
+        cover_image_url: raw.cover_image_url ? normalizeImageUrl(raw.cover_image_url) : (matched?.meta?.cover_image_url || ''),
         tour_type: raw.tour_type || matched?.meta?.tour_type || 'Private Tour',
         travel_date: raw.travel_date ? String(raw.travel_date) : (matched?.meta?.travel_date || ''),
         route: raw.route || matched?.meta?.route || '',
@@ -158,14 +158,14 @@ export default function ProposalListTable({
               day_title: String(d.day_title || `Day ${idx + 1}`),
               items: Array.isArray(d.items) ? d.items.join('\n') : String(d.items || ''),
               accommodation_note: String(d.accommodation_note || ''),
-              image_url: String(d.image_url || ''),
+              image_url: d.image_url ? normalizeImageUrl(d.image_url) : '',
             }))
           : (matched?.itinerary || []).map((d) => ({
               day_no: d.day_no,
               day_title: d.day_title,
               items: d.items.join('\n'),
               accommodation_note: d.accommodation_note || '',
-              image_url: d.image_url || '',
+              image_url: d.image_url ? normalizeImageUrl(d.image_url) : '',
             })),
         pricing: Array.isArray(raw.pricing) && raw.pricing.length > 0
           ? raw.pricing.map((opt: any) => ({

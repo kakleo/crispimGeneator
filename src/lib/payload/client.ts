@@ -6,6 +6,7 @@ import {
   PricingOptionGroup,
   ItineraryDay,
   normalizeStatus,
+  normalizeImageUrl,
 } from '../schema/types';
 import { getSiteSettings } from '../settings';
 import { getTermsHtml } from '../terms';
@@ -85,7 +86,7 @@ export function payloadDocToProposalDocument(doc: any): ProposalDocument {
       day_title: String(d.day_title || `Day ${idx + 1}`),
       items: itemsList,
       accommodation_note: d.accommodation_note ? String(d.accommodation_note).trim() : undefined,
-      image_url: d.image_url ? String(d.image_url).trim() : undefined,
+      image_url: d.image_url ? normalizeImageUrl(d.image_url) : undefined,
     };
   });
   itinerary.sort((a, b) => a.day_no - b.day_no);
@@ -166,7 +167,7 @@ export function payloadDocToProposalDocument(doc: any): ProposalDocument {
       status: normalizeStatus(doc.status),
       version: doc.version || 'v1',
       title: String(doc.title || 'Untitled Tour Proposal'),
-      cover_image_url: doc.cover_image_url || undefined,
+      cover_image_url: doc.cover_image_url ? normalizeImageUrl(doc.cover_image_url) : undefined,
       tour_type: doc.tour_type || undefined,
       travel_date: doc.travel_date ? String(doc.travel_date) : undefined,
       route: doc.route || undefined,
@@ -204,11 +205,26 @@ export async function getProposalDocumentBySlug(slug: string): Promise<ProposalD
   return payloadDocToProposalDocument(doc);
 }
 
+function sanitizePayloadImages(data: any) {
+  const result = { ...data };
+  if (result.cover_image_url !== undefined) {
+    result.cover_image_url = normalizeImageUrl(result.cover_image_url);
+  }
+  if (Array.isArray(result.itinerary)) {
+    result.itinerary = result.itinerary.map((d: any) => ({
+      ...d,
+      image_url: normalizeImageUrl(d.image_url),
+    }));
+  }
+  return result;
+}
+
 export async function createProposalInPayload(data: any) {
   const payload = await getPayloadClient();
+  const cleaned = sanitizePayloadImages(data);
   const payloadData = {
-    ...data,
-    status: normalizeStatus(data.status),
+    ...cleaned,
+    status: normalizeStatus(cleaned.status),
   };
   return payload.create({
     collection: 'proposals',
@@ -231,9 +247,10 @@ export async function updateProposalInPayload(slug: string, data: any) {
     }
   }
 
+  const cleaned = sanitizePayloadImages(data);
   const payloadData = {
-    ...data,
-    ...(data.status ? { status: normalizeStatus(data.status) } : {}),
+    ...cleaned,
+    ...(cleaned.status ? { status: normalizeStatus(cleaned.status) } : {}),
   };
 
   return payload.update({

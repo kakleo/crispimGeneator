@@ -68,6 +68,8 @@ export async function generateProposalPdf(params: {
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--font-render-hinting=none',
+        '--disable-web-security',
+        '--allow-running-insecure-content',
       ],
     });
 
@@ -97,7 +99,7 @@ export async function generateProposalPdf(params: {
     printUrl.searchParams.set('mode', 'print');
 
     await page.goto(printUrl.toString(), {
-      waitUntil: ['domcontentloaded', 'networkidle0'],
+      waitUntil: ['domcontentloaded', 'networkidle2'],
       timeout: 30000,
     });
 
@@ -106,14 +108,21 @@ export async function generateProposalPdf(params: {
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
       }
-      // Wait for all images to complete loading
+      // Wait for all images to complete loading (with timeout safeguard)
       const images = Array.from(document.images);
       await Promise.all(
         images.map((img) => {
-          if (img.complete) return Promise.resolve();
-          return new Promise((resolve) => {
-            img.addEventListener('load', resolve);
-            img.addEventListener('error', resolve);
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise<void>((resolve) => {
+            const timeout = setTimeout(() => resolve(), 8000);
+            img.addEventListener('load', () => {
+              clearTimeout(timeout);
+              resolve();
+            });
+            img.addEventListener('error', () => {
+              clearTimeout(timeout);
+              resolve();
+            });
           });
         })
       );

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ProposalStatus, normalizeStatus } from '@/lib/schema/types';
+import { ProposalStatus, normalizeStatus, normalizeImageUrl } from '@/lib/schema/types';
 import {
   X,
   Plus,
@@ -14,6 +14,7 @@ import {
   Loader2,
   Hotel,
   ExternalLink,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 export interface DayInput {
@@ -104,6 +105,13 @@ const getInitialForm = (data?: ProposalFormData | null): ProposalFormData => {
   return {
     ...data,
     status: normalizeStatus(data.status),
+    cover_image_url: normalizeImageUrl(data.cover_image_url),
+    itinerary: Array.isArray(data.itinerary)
+      ? data.itinerary.map((d) => ({
+          ...d,
+          image_url: normalizeImageUrl(d.image_url),
+        }))
+      : DEFAULT_FORM.itinerary,
   };
 };
 
@@ -290,6 +298,11 @@ export default function ProposalEditorModal({
       const payloadToSave = {
         ...formData,
         status: normalizeStatus(formData.status),
+        cover_image_url: normalizeImageUrl(formData.cover_image_url),
+        itinerary: formData.itinerary.map((d) => ({
+          ...d,
+          image_url: normalizeImageUrl(d.image_url),
+        })),
       };
 
       const res = await fetch(url, {
@@ -522,15 +535,91 @@ export default function ProposalEditorModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-zinc-700 mb-1">Cover Image URL (Hero Photo)</label>
-                <input
-                  type="text"
-                  value={formData.cover_image_url}
-                  onChange={(e) => updateField('cover_image_url', e.target.value)}
-                  placeholder="Leave empty for default scenic cover, or paste image URL / public path"
-                  className="w-full px-3 py-2 text-xs border border-zinc-300 rounded-md shadow-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none font-mono"
-                />
+              {/* Cover Image Hotlink Section with Live Preview */}
+              <div className="p-4 rounded-xl border border-zinc-200 bg-zinc-50/70 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-emerald-700" />
+                    <span className="text-xs font-semibold text-zinc-900">Cover Image URL (Hero Hotlink)</span>
+                  </div>
+                  {formData.cover_image_url ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Custom Cover Active
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-zinc-400">Default scenic cover</span>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={formData.cover_image_url}
+                      onChange={(e) => updateField('cover_image_url', e.target.value)}
+                      placeholder="Paste image hotlink (e.g. Unsplash, Imgur, Cloudinary, Google Drive, or CDN URL)"
+                      className="w-full px-3 py-2 text-xs border border-zinc-300 rounded-md bg-white shadow-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none font-mono"
+                    />
+                  </div>
+                  {formData.cover_image_url && (
+                    <>
+                      <a
+                        href={normalizeImageUrl(formData.cover_image_url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium border border-zinc-300 rounded-md bg-white hover:bg-zinc-100 text-zinc-700 transition"
+                        title="Open image in new tab to test hotlink"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Test</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => updateField('cover_image_url', '')}
+                        className="px-2.5 py-2 text-xs font-medium border border-zinc-300 rounded-md bg-white hover:bg-rose-50 text-rose-600 transition"
+                        title="Remove cover image"
+                      >
+                        Clear
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Live Preview Box */}
+                <div className="relative rounded-lg overflow-hidden border border-zinc-200 bg-white">
+                  {formData.cover_image_url ? (
+                    <div className="relative h-44 w-full bg-zinc-100 flex items-center justify-center overflow-hidden">
+                      <img
+                        key={formData.cover_image_url}
+                        src={normalizeImageUrl(formData.cover_image_url)}
+                        alt="Cover Preview"
+                        className="w-full h-full object-cover"
+                        loading="eager"
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                          const fallback = (e.target as HTMLElement).nextElementSibling;
+                          if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                        }}
+                      />
+                      <div className="hidden absolute inset-0 bg-rose-50/90 flex-col items-center justify-center p-3 text-center text-xs text-rose-700">
+                        <span className="font-semibold mb-0.5">Could not load image from this URL</span>
+                        <span className="text-[11px] text-rose-600">Please make sure the link is publicly accessible and points to an image file.</span>
+                      </div>
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 text-white rounded text-[10px] backdrop-blur-xs font-medium">
+                        Hero Cover Live Preview &bull; Reflected on Page 1 & PDF
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-20 w-full bg-gradient-to-b from-[#8a94ad] via-[#f0a35a] to-[#7d8f88] flex items-center justify-center text-white text-xs font-medium px-4 text-center">
+                      <div className="bg-black/40 px-3 py-1 rounded-md backdrop-blur-xs text-[11px]">
+                        Default scenic gradient cover active. Paste any image hotlink above to customize.
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -607,17 +696,80 @@ export default function ProposalEditorModal({
                         className="w-full px-3 py-1.5 text-xs border border-zinc-300 rounded-md bg-white shadow-xs focus:ring-1 focus:ring-zinc-900"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-zinc-500 mb-1">
-                        Polaroid Photo URL (optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={day.image_url}
-                        onChange={(e) => updateDay(idx, 'image_url', e.target.value)}
-                        placeholder="Image URL for this day"
-                        className="w-full px-3 py-1.5 text-xs border border-zinc-300 rounded-md bg-white shadow-xs focus:ring-1 focus:ring-zinc-900 font-mono"
-                      />
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-medium text-zinc-600">
+                          Day Photo Hotlink (Polaroid Frame)
+                        </label>
+                        {day.image_url ? (
+                          <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Hotlink Active
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-zinc-400">Optional photo</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={day.image_url}
+                          onChange={(e) => updateDay(idx, 'image_url', e.target.value)}
+                          placeholder="Paste image hotlink (e.g. https://...)"
+                          className="w-full px-3 py-1.5 text-xs border border-zinc-300 rounded-md bg-white shadow-xs focus:ring-1 focus:ring-zinc-900 font-mono"
+                        />
+                        {day.image_url && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <a
+                              href={normalizeImageUrl(day.image_url)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 text-xs font-medium border border-zinc-200 rounded-md bg-white hover:bg-zinc-100 text-zinc-600 transition"
+                              title="Test image hotlink in new tab"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => updateDay(idx, 'image_url', '')}
+                              className="px-2 py-1 text-[11px] font-medium border border-zinc-200 rounded-md bg-white hover:bg-rose-50 text-rose-600 transition"
+                              title="Clear photo"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Mini Polaroid Live Preview */}
+                      {day.image_url ? (
+                        <div className="flex items-center gap-2.5 p-1.5 rounded-md border border-zinc-200 bg-white shadow-2xs mt-1">
+                          <div className="w-12 h-12 rounded bg-zinc-100 overflow-hidden relative border border-zinc-200 shrink-0">
+                            <img
+                              key={day.image_url}
+                              src={normalizeImageUrl(day.image_url)}
+                              alt={`Day ${day.day_no} photo`}
+                              className="w-full h-full object-cover"
+                              loading="eager"
+                              referrerPolicy="no-referrer"
+                              crossOrigin="anonymous"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                                const fallback = (e.target as HTMLElement).nextElementSibling;
+                                if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                              }}
+                            />
+                            <div className="hidden absolute inset-0 bg-rose-50 items-center justify-center text-[8px] text-rose-600 text-center p-0.5 font-medium leading-tight">
+                              Invalid URL
+                            </div>
+                          </div>
+                          <div className="text-[11px] text-zinc-500 min-w-0">
+                            <span className="font-medium text-zinc-800 block truncate">Polaroid Live Preview</span>
+                            <span className="text-[10px] text-zinc-400 block truncate">Will render on Day {day.day_no} & PDF</span>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>

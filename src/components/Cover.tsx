@@ -1,5 +1,8 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import type { ProposalMeta, SiteSettings } from '@/lib/schema/types';
+import { normalizeImageUrl } from '@/lib/schema/types';
 import Footer from './Footer';
 
 interface CoverProps {
@@ -8,19 +11,24 @@ interface CoverProps {
 }
 
 export default function Cover({ meta, settings }: CoverProps) {
+  const [imgError, setImgError] = useState(false);
   // Title split for aesthetic line breaking matching design
   const formattedTitle = (meta.title || '').replace(/\b(TOUR)\b/i, '<br>$1');
+  const coverUrl = normalizeImageUrl(meta.cover_image_url);
 
   return (
     <section className="proposal-page cover-page relative w-[210mm] h-[297mm] mx-auto mb-6 bg-white overflow-hidden print:m-0 print:break-after-page shadow-md print:shadow-none">
       {/* Rounded Hero Image Container */}
       <div className="absolute left-[10mm] top-[9mm] right-[10mm] h-[196mm] rounded-[12mm] overflow-hidden bg-gradient-to-b from-[#8a94ad] via-[#f0a35a] to-[#7d8f88]">
-        {meta.cover_image_url ? (
+        {coverUrl && !imgError ? (
           <img
             className="w-full h-full object-cover"
-            src={meta.cover_image_url}
+            src={coverUrl}
             alt={meta.title}
             loading="eager"
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
+            onError={() => setImgError(true)}
           />
         ) : null}
       </div>
@@ -31,6 +39,8 @@ export default function Cover({ meta, settings }: CoverProps) {
           className="max-w-[75mm] max-h-[36mm] object-contain"
           src={settings.logo_url || '/logo.png'}
           alt={settings.company_name}
+          loading="eager"
+          referrerPolicy="no-referrer"
         />
       </div>
 

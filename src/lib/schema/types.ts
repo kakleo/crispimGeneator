@@ -7,6 +7,40 @@ export function normalizeStatus(val: unknown): ProposalStatus {
   return 'draft';
 }
 
+/**
+ * Normalizes hotlinked image URLs from various services:
+ * - Direct URLs: preserves intact
+ * - Google Drive share links: converts to direct high-res stream via lh3
+ * - Dropbox share links: ensures raw=1
+ * - Strips leading/trailing quotes and whitespace
+ */
+export function normalizeImageUrl(url?: string | null): string {
+  if (!url || typeof url !== 'string') return '';
+  let clean = url.trim().replace(/^["']+|["']+$/g, '');
+  if (!clean) return '';
+
+  // 1. Google Drive view/open links: convert to direct image stream
+  const driveFileMatch = clean.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveFileMatch && driveFileMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${driveFileMatch[1]}`;
+  }
+  const driveIdMatch = clean.match(/drive\.google\.com\/(?:open|uc)\?(?:[^&]*&)*id=([a-zA-Z0-9_-]+)/);
+  if (driveIdMatch && driveIdMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${driveIdMatch[1]}`;
+  }
+
+  // 2. Dropbox links: change dl=0 to raw=1 for direct image stream
+  if (clean.includes('dropbox.com')) {
+    clean = clean.replace(/([?&])dl=0\b/, '$1raw=1');
+    if (!clean.includes('raw=1')) {
+      clean += clean.includes('?') ? '&raw=1' : '?raw=1';
+    }
+    return clean;
+  }
+
+  return clean;
+}
+
 export interface RawRow {
   [key: string]: any;
 }

@@ -1,11 +1,15 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import type { ItineraryDay } from '@/lib/schema/types';
+import { normalizeImageUrl } from '@/lib/schema/types';
 
 interface DayBlockProps {
   day: ItineraryDay;
 }
 
 export default function DayBlock({ day }: DayBlockProps) {
+  const [imgError, setImgError] = useState(false);
   const dayPrefix = `DAY ${String(day.day_no).padStart(2, '0')}`;
   const fullTitle = day.day_title.toLowerCase().startsWith('day')
     ? day.day_title
@@ -17,6 +21,8 @@ export default function DayBlock({ day }: DayBlockProps) {
       ? day.accommodation_note
       : `Accomodation : ${day.accommodation_note}`
     : 'Accomodation : -';
+
+  const imageUrl = normalizeImageUrl(day.image_url);
 
   return (
     <div className="day-block relative mb-[6mm] min-h-[44mm] break-inside-avoid">
@@ -44,10 +50,18 @@ export default function DayBlock({ day }: DayBlockProps) {
 
         {/* Image Box */}
         <div className="absolute inset-x-[3.5mm] top-[5mm] h-[34mm] bg-[#c9ced3] flex items-center justify-center text-[3mm] text-[#59616a] overflow-hidden">
-          {day.image_url ? (
-            <img className="w-full h-full object-cover" src={day.image_url} alt={fullTitle} />
+          {imageUrl && !imgError ? (
+            <img
+              className="w-full h-full object-cover"
+              src={imageUrl}
+              alt={fullTitle}
+              loading="eager"
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+              onError={() => setImgError(true)}
+            />
           ) : (
-            <span>Photo placeholder</span>
+            <span className="text-[2.8mm] text-zinc-500 font-medium">Photo</span>
           )}
         </div>
       </div>
