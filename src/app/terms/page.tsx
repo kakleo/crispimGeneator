@@ -408,7 +408,7 @@ export default function TermsEditorPage() {
 
                 {/* Footer Preview */}
                 <div className="mt-8 pt-4 border-t border-zinc-100">
-                  <div className="h-9 bg-[#00897b] flex justify-center items-center gap-6 text-[11px] text-white rounded">
+                  <div className="h-9 bg-[#78c24e] flex justify-center items-center gap-6 text-[11px] text-white rounded font-medium">
                     <span>tourfloreskomodo.com</span>
                     <span>•</span>
                     <span>WhatsApp: +62 821-4473-7881</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ProposalMeta, SiteSettings } from '@/lib/schema/types';
 import { normalizeImageUrl } from '@/lib/schema/types';
 import Footer from './Footer';
@@ -11,24 +11,41 @@ interface CoverProps {
 }
 
 export default function Cover({ meta, settings }: CoverProps) {
+  const coverUrl = normalizeImageUrl(meta.cover_image_url);
+  const [currentSrc, setCurrentSrc] = useState(coverUrl);
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setCurrentSrc(coverUrl);
+    setImgError(false);
+  }, [coverUrl]);
+
+  const handleImgError = () => {
+    if (currentSrc && currentSrc.includes('lh3.googleusercontent.com/d/')) {
+      const id = currentSrc.split('lh3.googleusercontent.com/d/')[1];
+      if (id) {
+        setCurrentSrc(`https://drive.google.com/uc?export=view&id=${id}`);
+        return;
+      }
+    }
+    setImgError(true);
+  };
+
   // Title split for aesthetic line breaking matching design
   const formattedTitle = (meta.title || '').replace(/\b(TOUR)\b/i, '<br>$1');
-  const coverUrl = normalizeImageUrl(meta.cover_image_url);
 
   return (
     <section className="proposal-page cover-page relative w-[210mm] h-[297mm] mx-auto mb-6 bg-white overflow-hidden print:m-0 print:break-after-page shadow-md print:shadow-none">
       {/* Rounded Hero Image Container */}
       <div className="absolute left-[10mm] top-[9mm] right-[10mm] h-[196mm] rounded-[12mm] overflow-hidden bg-gradient-to-b from-[#8a94ad] via-[#f0a35a] to-[#7d8f88]">
-        {coverUrl && !imgError ? (
+        {currentSrc && !imgError ? (
           <img
             className="w-full h-full object-cover"
-            src={coverUrl}
+            src={currentSrc}
             alt={meta.title}
             loading="eager"
             referrerPolicy="no-referrer"
-            crossOrigin="anonymous"
-            onError={() => setImgError(true)}
+            onError={handleImgError}
           />
         ) : null}
       </div>

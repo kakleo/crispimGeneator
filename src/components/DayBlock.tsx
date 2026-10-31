@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ItineraryDay } from '@/lib/schema/types';
 import { normalizeImageUrl } from '@/lib/schema/types';
 
@@ -9,7 +9,27 @@ interface DayBlockProps {
 }
 
 export default function DayBlock({ day }: DayBlockProps) {
+  const imageUrl = normalizeImageUrl(day.image_url);
+  const [currentSrc, setCurrentSrc] = useState(imageUrl);
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setCurrentSrc(imageUrl);
+    setImgError(false);
+  }, [imageUrl]);
+
+  const handleImgError = () => {
+    // If it's a Google Drive link using lh3, try fallback to drive.google.com/uc?export=view&id=...
+    if (currentSrc && currentSrc.includes('lh3.googleusercontent.com/d/')) {
+      const id = currentSrc.split('lh3.googleusercontent.com/d/')[1];
+      if (id) {
+        setCurrentSrc(`https://drive.google.com/uc?export=view&id=${id}`);
+        return;
+      }
+    }
+    setImgError(true);
+  };
+
   const dayPrefix = `DAY ${String(day.day_no).padStart(2, '0')}`;
   const fullTitle = day.day_title.toLowerCase().startsWith('day')
     ? day.day_title
@@ -21,8 +41,6 @@ export default function DayBlock({ day }: DayBlockProps) {
       ? day.accommodation_note
       : `Accomodation : ${day.accommodation_note}`
     : 'Accomodation : -';
-
-  const imageUrl = normalizeImageUrl(day.image_url);
 
   return (
     <div className="day-block relative mb-[6mm] min-h-[44mm] break-inside-avoid">
@@ -50,15 +68,14 @@ export default function DayBlock({ day }: DayBlockProps) {
 
         {/* Image Box */}
         <div className="absolute inset-x-[3.5mm] top-[5mm] h-[34mm] bg-[#c9ced3] flex items-center justify-center text-[3mm] text-[#59616a] overflow-hidden">
-          {imageUrl && !imgError ? (
+          {currentSrc && !imgError ? (
             <img
               className="w-full h-full object-cover"
-              src={imageUrl}
+              src={currentSrc}
               alt={fullTitle}
               loading="eager"
               referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
-              onError={() => setImgError(true)}
+              onError={handleImgError}
             />
           ) : (
             <span className="text-[2.8mm] text-zinc-500 font-medium">Photo</span>

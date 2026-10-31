@@ -154,7 +154,7 @@ export default function SettingsPage() {
                 Live Footer Preview
               </span>
               <div className="rounded-lg overflow-hidden border border-zinc-200 shadow-xs">
-                <div className="h-10 bg-[#00897b] flex justify-center items-center gap-6 text-xs text-white">
+                <div className="h-10 bg-[#78c24e] flex justify-center items-center gap-6 text-xs text-white">
                   <span className="flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5 fill-none stroke-white stroke-[1.6]" viewBox="0 0 24 24">
                       <circle cx="12" cy="12" r="9.5"></circle>

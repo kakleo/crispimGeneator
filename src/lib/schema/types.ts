@@ -24,7 +24,7 @@ export function normalizeImageUrl(url?: string | null): string {
   if (driveFileMatch && driveFileMatch[1]) {
     return `https://lh3.googleusercontent.com/d/${driveFileMatch[1]}`;
   }
-  const driveIdMatch = clean.match(/drive\.google\.com\/(?:open|uc)\?(?:[^&]*&)*id=([a-zA-Z0-9_-]+)/);
+  const driveIdMatch = clean.match(/drive\.google\.com\/.*?[?&]id=([a-zA-Z0-9_-]+)/);
   if (driveIdMatch && driveIdMatch[1]) {
     return `https://lh3.googleusercontent.com/d/${driveIdMatch[1]}`;
   }

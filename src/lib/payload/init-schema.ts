@@ -189,6 +189,19 @@ export async function ensureDatabaseSchema(adapter: any) {
     }
   }
 
+  // Column Migrations: ensure new columns exist in pre-existing tables (e.g. Turso / existing databases)
+  const columnMigrations = [
+    'ALTER TABLE `proposals_itinerary` ADD COLUMN `image_url` text;',
+    'ALTER TABLE `proposals` ADD COLUMN `cover_image_url` text;',
+  ];
+  for (const alterSql of columnMigrations) {
+    try {
+      await client.execute(alterSql);
+    } catch {
+      // Ignore if column already exists (duplicate column name error)
+    }
+  }
+
   schemaInitialized = true;
   console.log('[Schema Init] Complete: Database tables and indexes verified.');
 }

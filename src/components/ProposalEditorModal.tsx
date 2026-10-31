@@ -597,7 +597,6 @@ export default function ProposalEditorModal({
                         className="w-full h-full object-cover"
                         loading="eager"
                         referrerPolicy="no-referrer"
-                        crossOrigin="anonymous"
                         onError={(e) => {
                           (e.target as HTMLElement).style.display = 'none';
                           const fallback = (e.target as HTMLElement).nextElementSibling;
@@ -646,7 +645,7 @@ export default function ProposalEditorModal({
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-md bg-[#00897b] text-white flex items-center justify-center font-bold text-xs select-none">
+                      <span className="w-7 h-7 rounded-md bg-[#78c24e] text-white flex items-center justify-center font-bold text-xs select-none">
                         D{day.day_no}
                       </span>
                       <input
@@ -753,7 +752,6 @@ export default function ProposalEditorModal({
                               className="w-full h-full object-cover"
                               loading="eager"
                               referrerPolicy="no-referrer"
-                              crossOrigin="anonymous"
                               onError={(e) => {
                                 (e.target as HTMLElement).style.display = 'none';
                                 const fallback = (e.target as HTMLElement).nextElementSibling;

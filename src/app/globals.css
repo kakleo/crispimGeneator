@@ -57,7 +57,7 @@ body {
   letter-spacing: 0.01em;
   margin-top: 4mm;
   margin-bottom: 2mm;
-  color: #00897b;
+  color: #000000 !important;
   border-bottom: 0.5px solid #e4e4e7;
   padding-bottom: 1mm;
 }
@@ -94,7 +94,7 @@ body {
 }
 
 .terms-content li::marker {
-  color: #00897b;
+  color: #78c24e;
   font-size: 1.1em;
 }
 

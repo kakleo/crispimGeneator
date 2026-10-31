@@ -379,6 +379,7 @@ async function seedInitialData(payload: any) {
             items:
               'Picked up at Ende Airport (ENE) Transfer to Moni. On the way stop over in Detusoko, rice field walk.\nVisit Wologai Village ; a traditional village lived by Lionese\nStay and overnight at Lodge in Moni',
             accommodation_note: 'See Price List',
+            image_url: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=600&q=80',
           },
           {
             day_no: 2,
@@ -386,6 +387,7 @@ async function seedInitialData(payload: any) {
             items:
               'Seeing the Kelimutu Lakes at dawn is a truly magical experience. Up at 04:00 you will drive with your driver to the crater lakes through the base of the Kelimutu National Park and walk up to the lakes through early morning woodland.\nSip hot drinks while sunlight wakes the spiritual volcanic crater and learn about local beliefs and folklore. Then explore all three of the ever-changing coloured lakes. This is an unforgettable adventure.\nBreakfast at lodge, loading luggage and check out. Drive to Penggajawa\nStop over in Blue stone Beach\nDrive to Bajawa, Stay and overnight at Hotel in Bajawa.',
             accommodation_note: 'See Price List',
+            image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
           },
           {
             day_no: 3,
@@ -393,6 +395,7 @@ async function seedInitialData(payload: any) {
             items:
               'Breakfast at hotel and check out\nFirst visit Wolobobo view point\nVisit Bena Traditional VIllage ; meghalit village lived by Ngadanese tribe\nVisit Malanage Hot Spring\nDrive to Ruteng, on the way stop over to see arak; local wine distillation process\nStay and overnight at Hotel in Ruteng',
             accommodation_note: 'See Price List',
+            image_url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
           },
           {
             day_no: 4,
@@ -400,6 +403,7 @@ async function seedInitialData(payload: any) {
             items:
               'Breakfast at hotel and check out\nVisit Cancar spider web rice field.\nDrive to Todo, visit Todo Traditional village ; old Manggarai tribe village, These represent one of the oldest kingships, established when the Dutch chose the Todo Clan to rule over Manggarai\nDrive to Labuan Bajo and tour finish.',
             accommodation_note: '-',
+            image_url: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80',
           },
         ],
         pricing: [
