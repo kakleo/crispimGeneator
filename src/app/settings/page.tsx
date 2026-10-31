@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { getSiteSettings } from '@/lib/settings';
-import { ArrowLeft, Building2, Palette, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Building2, Palette, ExternalLink, FileText } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -181,6 +181,28 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Terms of Service Card */}
+        <div className="mt-8 bg-white rounded-xl border border-zinc-200 p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-900">Proposal Terms & Conditions</h3>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Edit the 7-clause terms and conditions included on Page 6 of every client proposal and PDF export.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/terms"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-zinc-900 hover:bg-zinc-800 text-white shadow-xs transition shrink-0"
+          >
+            <span>Open Terms Editor</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
         {/* Code Constant Reference */}

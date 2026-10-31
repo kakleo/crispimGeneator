@@ -290,6 +290,15 @@ export default function ProposalListTable({
             </a>
 
             <a
+              href="/terms"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 shadow-xs transition-colors"
+              title="Edit Terms & Conditions"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Terms</span>
+            </a>
+
+            <a
               href="/settings"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 shadow-xs transition-colors"
             >

@@ -9,7 +9,7 @@ import {
   normalizeImageUrl,
 } from '../schema/types';
 import { getSiteSettings } from '../settings';
-import { getTermsHtml } from '../terms';
+import { getTermsHtml, getTermsHtmlAsync } from '../terms';
 import { sanitizeCustomHtml } from '../sanitize';
 
 let payloadInstance: any = null;
@@ -60,9 +60,9 @@ export async function getRawProposalBySlug(slug: string): Promise<any | null> {
   return res.docs[0] || null;
 }
 
-export function payloadDocToProposalDocument(doc: any): ProposalDocument {
+export function payloadDocToProposalDocument(doc: any, customTermsHtml?: string): ProposalDocument {
   const settings = getSiteSettings();
-  const termsHtml = getTermsHtml();
+  const termsHtml = customTermsHtml || getTermsHtml();
 
   // 1. Itinerary parsing
   const rawItinerary = Array.isArray(doc.itinerary) ? doc.itinerary : [];
@@ -195,14 +195,18 @@ export function payloadDocToProposalDocument(doc: any): ProposalDocument {
 }
 
 export async function getAllProposalDocuments(): Promise<ProposalDocument[]> {
-  const rawList = await getRawProposals();
-  return rawList.map(payloadDocToProposalDocument);
+  const [rawList, termsHtml] = await Promise.all([
+    getRawProposals(),
+    getTermsHtmlAsync(),
+  ]);
+  return rawList.map((doc) => payloadDocToProposalDocument(doc, termsHtml));
 }
 
 export async function getProposalDocumentBySlug(slug: string): Promise<ProposalDocument | null> {
   const doc = await getRawProposalBySlug(slug);
   if (!doc) return null;
-  return payloadDocToProposalDocument(doc);
+  const termsHtml = await getTermsHtmlAsync();
+  return payloadDocToProposalDocument(doc, termsHtml);
 }
 
 function sanitizePayloadImages(data: any) {

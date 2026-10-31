@@ -10,7 +10,7 @@ export default {
       },
       fontFamily: {
         sans: ['"DM Sans"', 'Helvetica', 'Arial', 'sans-serif'],
-        display: ['Syne', '"DM Sans"', 'Helvetica', 'sans-serif'],
+        display: ['"DM Sans"', 'Helvetica', 'Arial', 'sans-serif'],
       },
     },
   },

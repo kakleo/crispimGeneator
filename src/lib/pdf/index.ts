@@ -37,6 +37,10 @@ function releaseJobSlot(): void {
   }
 }
 
+export function clearPdfCache(): void {
+  pdfCache.clear();
+}
+
 export function computeDataHash(data: any): string {
   return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex').substring(0, 16);
 }

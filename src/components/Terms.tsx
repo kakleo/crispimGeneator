@@ -6,9 +6,9 @@ interface TermsProps {
 
 export default function Terms({ termsHtml }: TermsProps) {
   return (
-    <div className="terms-section pt-[4mm] mb-[10mm] break-before-page">
+    <div className="terms-section pt-[2mm] mb-[8mm]">
       <div
-        className="terms-content text-[3.8mm] leading-[1.4] text-black"
+        className="terms-content text-zinc-900"
         dangerouslySetInnerHTML={{ __html: termsHtml }}
       />
     </div>
