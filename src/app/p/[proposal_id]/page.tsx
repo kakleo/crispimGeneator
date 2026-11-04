@@ -9,6 +9,7 @@ import PriceTable from '@/components/PriceTable';
 import IncludeExclude from '@/components/IncludeExclude';
 import Terms from '@/components/Terms';
 import Footer from '@/components/Footer';
+import PagedBlocks from '@/components/PagedBlocks';
 import AutoDirectDownloader from '@/components/AutoDirectDownloader';
 
 export const dynamic = 'force-dynamic';
@@ -65,53 +66,47 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
         {/* PAGE 1: COVER */}
         <Cover meta={meta} settings={settings} />
 
-        {/* PAGE 2: General Information & Itinerary Start */}
-        <section className="page-container relative w-[210mm] min-h-[297mm] print:h-[297mm] print:max-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
-          <div className="pt-[12mm] px-[9mm] pb-[16mm] flex-1">
-            <GeneralInfo
-              meta={meta}
-              introParagraphs={introParagraphs}
-              extraInfoRows={extraInfoRows}
-            />
-
-            {sanitizedHtml && (
-              <div
-                className="custom-html-block mb-[6mm] p-[3mm] bg-[#f8f9fa] border border-[#e2e8f0] rounded"
-                dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+        {/* PAGES 2+: General Information & Itinerary. Whole days move to a new page when they don't fit. */}
+        <PagedBlocks
+          settings={settings}
+          padXmm={9}
+          padTopFirstMm={12}
+          padTopRestMm={10}
+          header={
+            <>
+              <GeneralInfo
+                meta={meta}
+                introParagraphs={introParagraphs}
+                extraInfoRows={extraInfoRows}
               />
-            )}
 
-            <h2 className="text-[9.5mm] font-bold tracking-tight mb-[5mm] text-black">
-              TOUR ITINERARY
-            </h2>
+              {sanitizedHtml && (
+                <div
+                  className="custom-html-block mb-[6mm] p-[3mm] bg-[#f8f9fa] border border-[#e2e8f0] rounded"
+                  dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+                />
+              )}
 
-            {itinerary.slice(0, 2).map((day) => (
-              <DayBlock key={day.day_no} day={day} />
-            ))}
-          </div>
+              <h2 className="text-[9.5mm] font-bold tracking-tight mb-[5mm] text-black">
+                TOUR ITINERARY
+              </h2>
+            </>
+          }
+          blocks={itinerary.map((day) => (
+            <DayBlock key={day.day_no} day={day} />
+          ))}
+        />
 
-          <Footer settings={settings} />
-        </section>
-
-        {/* PAGE 3: Remaining Itinerary Days (if more than 2 days) */}
-        {itinerary.length > 2 && (
-          <section className="page-container relative w-[210mm] min-h-[297mm] print:h-[297mm] print:max-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
-            <div className="pt-[10mm] px-[9mm] pb-[16mm] flex-1">
-              {itinerary.slice(2).map((day) => (
-                <DayBlock key={day.day_no} day={day} />
-              ))}
-            </div>
-            <Footer settings={settings} />
-          </section>
-        )}
-
-        {/* PAGE 4: Price Information */}
-        <section className="page-container relative w-[210mm] min-h-[297mm] print:h-[297mm] print:max-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
-          <div className="pt-[12mm] px-[14mm] pb-[16mm] flex-1">
-            <PriceTable pricingOptions={pricingOptions} />
-          </div>
-          <Footer settings={settings} />
-        </section>
+        {/* Price Information: each option table is kept whole; overflow goes to a new page */}
+        <PagedBlocks
+          settings={settings}
+          padXmm={14}
+          padTopFirstMm={12}
+          padTopRestMm={12}
+          blocks={pricingOptions.map((option, i) => (
+            <PriceTable key={i} pricingOptions={[option]} showHeading={i === 0} />
+          ))}
+        />
 
         {/* PAGE 5: Inclusions & Exclusions */}
         <section className="page-container relative w-[210mm] min-h-[297mm] print:h-[297mm] print:max-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
@@ -124,13 +119,23 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
           <Footer settings={settings} />
         </section>
 
-        {/* PAGE 6: Terms of Service */}
-        <section className="page-container relative w-[210mm] min-h-[297mm] print:h-[297mm] print:max-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
-          <div className="pt-[12mm] px-[12mm] pb-[16mm] flex-1">
-            <Terms termsHtml={proposal.termsHtml} />
-          </div>
-          <Footer settings={settings} />
-        </section>
+        {/* Terms: split at each heading so a section is never cut between pages */}
+        <PagedBlocks
+          settings={settings}
+          padXmm={12}
+          padTopFirstMm={12}
+          padTopRestMm={12}
+          blocks={proposal.termsHtml
+            .split(/(?=<h[1-3][\s>])/i)
+            .filter((chunk) => chunk.trim())
+            .map((chunk, i) => (
+              <div
+                key={i}
+                className="terms-content text-zinc-900 mb-[3mm]"
+                dangerouslySetInnerHTML={{ __html: chunk }}
+              />
+            ))}
+        />
       </div>
     </div>
   );

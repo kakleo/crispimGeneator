@@ -3,14 +3,17 @@ import type { PricingOptionGroup } from '@/lib/schema/types';
 
 interface PriceTableProps {
   pricingOptions: PricingOptionGroup[];
+  showHeading?: boolean;
 }
 
-export default function PriceTable({ pricingOptions }: PriceTableProps) {
+export default function PriceTable({ pricingOptions, showHeading = true }: PriceTableProps) {
   return (
     <div className="price-section mb-[8mm]">
-      <h2 className="text-[9.5mm] font-bold tracking-tight mb-[5mm] text-black uppercase font-sans">
-        PRICE INFORMATION
-      </h2>
+      {showHeading && (
+        <h2 className="text-[9.5mm] font-bold tracking-tight mb-[5mm] text-black uppercase font-sans">
+          PRICE INFORMATION
+        </h2>
+      )}
 
       {pricingOptions.map((option, optIdx) => {
         const isUnit = option.price_unit === 'unit';
