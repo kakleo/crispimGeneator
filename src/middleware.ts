@@ -5,6 +5,7 @@ import { COOKIE_NAME, verifySessionToken } from './lib/auth/session';
 const PUBLIC_EXACT_PATHS = new Set([
   '/login',
   '/api/login',
+  '/api/export-pdf',
   '/health',
   '/api/diag',
   '/robots.txt',
@@ -38,6 +39,11 @@ export async function middleware(request: NextRequest) {
 
   // Allow public paths & static assets
   if (isPublicAsset(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Allow internal server PDF generation requests
+  if (request.headers.get('x-internal-pdf') === '1') {
     return NextResponse.next();
   }
 

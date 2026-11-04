@@ -86,19 +86,22 @@ export async function generateProposalPdf(params: {
       deviceScaleFactor: 2,
     });
 
-    // Pass session cookie so Chromium passes the login middleware
+    // Pass session cookie & internal bypass header so Chromium passes the login middleware
     if (sessionCookie) {
-      const urlObj = new URL(targetUrl);
       await page.setCookie({
         name: 'tour_session',
         value: sessionCookie,
-        domain: urlObj.hostname,
-        path: '/',
+        url: targetUrl,
         httpOnly: true,
       });
     }
 
-    // Append ?print=1 query param if needed
+    await page.setExtraHTTPHeaders({
+      ...(sessionCookie ? { Cookie: `tour_session=${sessionCookie}` } : {}),
+      'x-internal-pdf': '1',
+    });
+
+    // Append ?mode=print query param if needed
     const printUrl = new URL(targetUrl);
     printUrl.searchParams.set('mode', 'print');
 
