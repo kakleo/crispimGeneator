@@ -49,6 +49,14 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
       {/* Top Toolbar outside printable area */}
       <Toolbar proposal={proposal} />
 
+      {/* Autoprint Notice for Fallback */}
+      {resolvedSearchParams?.autoprint === '1' && (
+        <div className="no-print bg-emerald-50 border-b border-emerald-200 px-4 py-2.5 text-center text-xs text-emerald-800 flex items-center justify-center gap-2">
+          <span className="font-semibold">Preparing Print-to-PDF:</span>
+          <span>Please select &quot;Save as PDF&quot; in the print dialog. If it didn&apos;t open automatically, click <strong>Print</strong> above.</span>
+        </div>
+      )}
+
       {/* Preview Viewport */}
       <div className="preview-viewport py-6 print:py-0 flex flex-col items-center">
         {/* PAGE 1: COVER */}
@@ -122,14 +130,23 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
         </section>
       </div>
 
-      {/* Autoprint handler if triggered from /pdf fallback */}
+      {/* Robust autoprint handler if triggered from /pdf fallback */}
       {resolvedSearchParams?.autoprint === '1' && (
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.addEventListener('load', function() {
-                setTimeout(function() { window.print(); }, 600);
-              });
+              (function() {
+                function triggerPrint() {
+                  setTimeout(function() {
+                    window.print();
+                  }, 800);
+                }
+                if (document.readyState === 'complete') {
+                  triggerPrint();
+                } else {
+                  window.addEventListener('load', triggerPrint);
+                }
+              })();
             `,
           }}
         />

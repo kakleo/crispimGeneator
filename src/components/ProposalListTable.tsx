@@ -39,6 +39,7 @@ export default function ProposalListTable({
   const [duplicatingSlug, setDuplicatingSlug] = useState<string | null>(null);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
+  const [downloadingSlug, setDownloadingSlug] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Modal State
@@ -101,6 +102,41 @@ export default function ProposalListTable({
       alert(`Network error: ${err?.message || 'Connection failed'}`);
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  // Safe PDF Download handler (prevents accidental .html file download)
+  const handleDownloadPdf = async (proposalId: string, version?: string) => {
+    if (downloadingSlug) return;
+    setDownloadingSlug(proposalId);
+    try {
+      const res = await fetch(`/p/${encodeURIComponent(proposalId)}/pdf`);
+      const contentType = res.headers.get('content-type') || '';
+
+      if (res.ok && contentType.includes('application/pdf')) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const today = new Date().toISOString().split('T')[0];
+        const ver = version ? `-${version}` : '';
+        a.download = `${proposalId}${ver}-${today}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        showToast('PDF downloaded successfully');
+        return;
+      }
+
+      // If serverless environment without headless Chromium (e.g. Vercel),
+      // open in new tab with autoprint=1 so the browser opens the native Save as PDF dialog.
+      // This displays the formatted proposal and DOES NOT download an .html file!
+      window.open(`/p/${encodeURIComponent(proposalId)}?autoprint=1`, '_blank');
+    } catch {
+      window.open(`/p/${encodeURIComponent(proposalId)}?autoprint=1`, '_blank');
+    } finally {
+      setDownloadingSlug(null);
     }
   };
 
@@ -507,15 +543,20 @@ export default function ProposalListTable({
 
                           {/* PDF Download Button */}
                           {isExportable ? (
-                            <a
-                              href={`/p/${p.meta.proposal_id}/pdf`}
-                              className="inline-flex items-center justify-center gap-1 rounded-md text-xs font-medium bg-zinc-900 text-white hover:bg-zinc-800 h-8 px-2.5 shadow-2xs transition-colors"
-                              download
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadPdf(p.meta.proposal_id, p.meta.version)}
+                              disabled={downloadingSlug === p.meta.proposal_id}
+                              className="inline-flex items-center justify-center gap-1 rounded-md text-xs font-medium bg-zinc-900 text-white hover:bg-zinc-800 h-8 px-2.5 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
                               title="Download PDF"
                             >
-                              <Download className="w-3.5 h-3.5" />
+                              {downloadingSlug === p.meta.proposal_id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5" />
+                              )}
                               <span>PDF</span>
-                            </a>
+                            </button>
                           ) : (
                             <button
                               disabled

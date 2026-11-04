@@ -72,20 +72,8 @@ export async function GET(
     });
   } catch (error: any) {
     console.error('PDF Generation Error:', error);
-    const errMsg = error?.message || String(error);
-    if (
-      errMsg.includes('Could not find Chrome') ||
-      errMsg.includes('spawn') ||
-      errMsg.includes('chromium') ||
-      errMsg.includes('Executable does not exist') ||
-      errMsg.includes('Failed to launch')
-    ) {
-      return NextResponse.redirect(new URL(`/p/${proposalId}?autoprint=1`, request.url), 302);
-    }
-
-    return NextResponse.json(
-      { error: `PDF generation failed: ${errMsg}` },
-      { status: 500 }
-    );
+    // On serverless environments (e.g. Vercel without Chromium), launch failures, or timeouts,
+    // safely redirect to the print-optimized proposal preview so the user can Save as PDF
+    return NextResponse.redirect(new URL(`/p/${proposalId}?autoprint=1`, request.url), 302);
   }
 }

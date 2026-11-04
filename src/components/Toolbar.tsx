@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ProposalDocument, normalizeStatus } from '@/lib/schema/types';
-import { RefreshCw, Printer, Download, ArrowLeft, AlertCircle, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Printer, Download, ArrowLeft, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
 
 interface ToolbarProps {
   proposal: ProposalDocument;
@@ -15,6 +15,7 @@ export default function Toolbar({ proposal }: ToolbarProps) {
   const isDraft = status === 'draft';
 
   const [refreshing, setRefreshing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -35,6 +36,38 @@ export default function Toolbar({ proposal }: ToolbarProps) {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const res = await fetch(`/p/${encodeURIComponent(meta.proposal_id)}/pdf`);
+      const contentType = res.headers.get('content-type') || '';
+
+      if (res.ok && contentType.includes('application/pdf')) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const today = new Date().toISOString().split('T')[0];
+        const ver = meta.version ? `-${meta.version}` : '';
+        a.download = `${meta.proposal_id}${ver}-${today}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        return;
+      }
+
+      // If server could not generate headless PDF (serverless or redirect),
+      // we are already on the proposal page! Trigger native browser print-to-PDF.
+      window.print();
+    } catch {
+      window.print();
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -123,20 +156,24 @@ export default function Toolbar({ proposal }: ToolbarProps) {
 
           {/* Download PDF Button (FR-18, FR-21, FR-31) */}
           {isExportable ? (
-            <a
-              href={`/p/${meta.proposal_id}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm transition"
-              download
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={downloading}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm transition cursor-pointer disabled:opacity-50"
+              title="Download proposal as PDF"
             >
-              <Download className="w-3.5 h-3.5 text-white" />
-              <span>Download PDF</span>
-            </a>
+              {downloading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+              ) : (
+                <Download className="w-3.5 h-3.5 text-white" />
+              )}
+              <span>{downloading ? 'Preparing PDF...' : 'Download PDF'}</span>
+            </button>
           ) : (
             <button
               disabled
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed"
               title="PDF export blocked due to validation errors or archived status"
             >
               PDF Blocked
@@ -158,49 +195,23 @@ export default function Toolbar({ proposal }: ToolbarProps) {
 
       {/* Draft Notice Watermark Banner */}
       {isDraft && (
-        <div className="bg-amber-50 border-y border-amber-200 text-amber-800 px-4 py-1.5 text-center text-xs font-semibold tracking-wide">
-          &bull; DRAFT PROPOSAL &bull; FOR INTERNAL REVIEW ONLY &bull;
+        <div className="bg-amber-400 text-amber-950 px-4 py-1.5 text-center text-xs font-semibold tracking-wide uppercase flex items-center justify-center gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          <span>Draft Proposal &mdash; Not Ready For Client Distribution</span>
         </div>
       )}
 
-      {/* Blocking Errors Alert Banner (FR-30, FR-31) */}
-      {validation.errors.length > 0 && (
-        <div className="bg-rose-50 border-t border-rose-200 text-rose-900 px-4 py-2.5 text-xs">
-          <div className="max-w-7xl mx-auto flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <b className="font-semibold text-rose-900">Blocking Validation Errors (PDF export disabled):</b>
-              <ul className="list-disc pl-5 mt-1 space-y-0.5 text-rose-800">
-                {validation.errors.map((err, idx) => (
-                  <li key={idx}>
-                    <span className="font-medium text-rose-950">{err.tab}</span> row{' '}
-                    <span className="font-mono font-bold text-rose-950">{err.row}</span>, column{' '}
-                    <span className="font-mono font-medium text-rose-950">{err.column}</span>: {err.message}
-                  </li>
-                ))}
-              </ul>
-            </div>
+      {/* Blocking Validation Error Banner */}
+      {!validation.isValid && (
+        <div className="bg-rose-600 text-white px-4 py-2 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span className="font-semibold">Validation Errors ({validation.errors.length}):</span>
+            <span className="truncate max-w-xl">
+              {validation.errors.map((e) => `[${e.tab}] ${e.message}`).join('; ')}
+            </span>
           </div>
-        </div>
-      )}
-
-      {/* Non-blocking Warnings Banner (FR-31) */}
-      {validation.warnings.length > 0 && (
-        <div className="bg-amber-50 border-t border-amber-200 text-amber-900 px-4 py-2 text-xs">
-          <div className="max-w-7xl mx-auto flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <b className="font-semibold text-amber-900">Data Quality Warnings:</b>
-              <ul className="list-disc pl-5 mt-1 space-y-0.5 text-amber-800">
-                {validation.warnings.map((w, idx) => (
-                  <li key={idx}>
-                    {w.tab}
-                    {w.row ? ` row ${w.row}` : ''}: {w.message}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <span className="text-[11px] bg-rose-700 px-2 py-0.5 rounded font-mono">Export Disabled</span>
         </div>
       )}
     </header>

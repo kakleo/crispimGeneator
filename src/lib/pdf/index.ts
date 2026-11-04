@@ -103,8 +103,8 @@ export async function generateProposalPdf(params: {
     printUrl.searchParams.set('mode', 'print');
 
     await page.goto(printUrl.toString(), {
-      waitUntil: ['domcontentloaded', 'networkidle2'],
-      timeout: 30000,
+      waitUntil: 'domcontentloaded',
+      timeout: 15000,
     });
 
     // Wait for fonts to load
@@ -118,7 +118,7 @@ export async function generateProposalPdf(params: {
         images.map((img) => {
           if (img.complete && img.naturalWidth > 0) return Promise.resolve();
           return new Promise<void>((resolve) => {
-            const timeout = setTimeout(() => resolve(), 8000);
+            const timeout = setTimeout(() => resolve(), 4000);
             img.addEventListener('load', () => {
               clearTimeout(timeout);
               resolve();
