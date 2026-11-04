@@ -65,6 +65,11 @@ export default function Toolbar({ proposal }: ToolbarProps) {
         return;
       }
 
+      // Surface WHY the server render failed (otherwise the lower-quality fallback hides it)
+      const serverErr = await res.clone().text().catch(() => '');
+      console.error('Server PDF failed:', res.status, serverErr.slice(0, 1000));
+      alert(`Server PDF failed (HTTP ${res.status}): ${serverErr.slice(0, 300)}\n\nFalling back to the lower-quality browser renderer.`);
+
       // 2. Fallback: client-side html2canvas (if server PDF fails)
       setDownloadStatus('Rendering PDF client-side...');
       const { downloadProposalPdfDirectly } = await import('@/lib/pdf/client-download');
