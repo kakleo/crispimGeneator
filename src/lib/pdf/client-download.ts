@@ -95,6 +95,40 @@ async function inlineAllProposalImages(
   };
 }
 
+
+/**
+ * html2canvas does not reproduce a few browser behaviours. Normalise them in the cloned DOM only.
+ */
+function applyCanvasSafeFixes(root: HTMLElement) {
+  // Tables: border-collapse renders doubled/thick inner lines. Emulate it with single right/bottom borders.
+  root.querySelectorAll<HTMLTableElement>('table').forEach((t) => {
+    t.style.borderCollapse = 'separate';
+    t.style.borderSpacing = '0';
+    t.style.borderTop = '0.5mm solid #000';
+    t.style.borderLeft = '0.5mm solid #000';
+    t.querySelectorAll<HTMLElement>('th,td').forEach((c) => {
+      c.style.border = '0';
+      c.style.borderRight = '0.5mm solid #000';
+      c.style.borderBottom = '0.5mm solid #000';
+    });
+  });
+
+  // Bullets: ::before with a hard-coded top drifts; use a real element centred on the first line.
+  const doc = root.ownerDocument;
+  root.querySelectorAll<HTMLElement>('.terms-content li').forEach((li) => {
+    const cs = doc.defaultView!.getComputedStyle(li);
+    const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.55;
+    const size = 5;
+    const dot = doc.createElement('span');
+    dot.style.cssText = `position:absolute;left:2px;top:${(lh - size) / 2}px;width:${size}px;height:${size}px;border-radius:50%;background:#78c24e;`;
+    li.prepend(dot);
+    li.classList.add('no-before');
+  });
+  const style = doc.createElement('style');
+  style.textContent = '.no-before::before{display:none!important;content:none!important}';
+  doc.head.appendChild(style);
+}
+
 /**
  * Generates and downloads an exact A4 PDF directly in the browser using html2canvas & jsPDF.
  * Zero print dialogs, zero "Save as PDF" windows, and zero CORS/missing image issues.
@@ -168,6 +202,7 @@ export async function downloadProposalPdfDirectly(
           clonedEl.style.boxShadow = 'none';
           clonedEl.style.margin = '0 auto';
           clonedEl.style.transform = 'none';
+          applyCanvasSafeFixes(clonedEl);
         },
       });
 

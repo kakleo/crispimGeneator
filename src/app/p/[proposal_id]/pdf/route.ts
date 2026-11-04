@@ -4,6 +4,8 @@ import { generateProposalPdf, computeDataHash } from '@/lib/pdf';
 import { COOKIE_NAME } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 60; // Chromium cold start + render can exceed the default limit
 
 export async function GET(
   request: NextRequest,
