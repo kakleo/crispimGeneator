@@ -12,10 +12,12 @@ export default function DayBlock({ day }: DayBlockProps) {
   const imageUrl = normalizeImageUrl(day.image_url);
   const [currentSrc, setCurrentSrc] = useState(imageUrl);
   const [imgError, setImgError] = useState(false);
+  const [hasTriedProxy, setHasTriedProxy] = useState(false);
 
   useEffect(() => {
     setCurrentSrc(imageUrl);
     setImgError(false);
+    setHasTriedProxy(false);
   }, [imageUrl]);
 
   const handleImgError = () => {
@@ -26,6 +28,12 @@ export default function DayBlock({ day }: DayBlockProps) {
         setCurrentSrc(`https://drive.google.com/uc?export=view&id=${id}`);
         return;
       }
+    }
+    // Fallback to image-proxy if direct loading fails
+    if (imageUrl && !hasTriedProxy && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+      setHasTriedProxy(true);
+      setCurrentSrc(`/api/image-proxy?url=${encodeURIComponent(imageUrl)}`);
+      return;
     }
     setImgError(true);
   };

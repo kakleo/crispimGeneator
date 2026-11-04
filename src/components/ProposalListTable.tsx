@@ -105,35 +105,13 @@ export default function ProposalListTable({
     }
   };
 
-  // Safe PDF Download handler (prevents accidental .html file download)
+  // Safe PDF Download handler (direct high-resolution PDF download with inlined hotlink images)
   const handleDownloadPdf = async (proposalId: string, version?: string) => {
     if (downloadingSlug) return;
     setDownloadingSlug(proposalId);
     try {
-      const res = await fetch(`/p/${encodeURIComponent(proposalId)}/pdf`);
-      const contentType = res.headers.get('content-type') || '';
-
-      if (res.ok && contentType.includes('application/pdf')) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const today = new Date().toISOString().split('T')[0];
-        const ver = version ? `-${version}` : '';
-        a.download = `${proposalId}${ver}-${today}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        showToast('PDF downloaded successfully');
-        return;
-      }
-
-      // If serverless environment without headless Chromium, open in new tab with autodownload=1
-      // The page will directly generate and download the PDF file to disk without opening any print dialog!
       window.open(`/p/${encodeURIComponent(proposalId)}?autodownload=1`, '_blank');
-    } catch {
-      window.open(`/p/${encodeURIComponent(proposalId)}?autodownload=1`, '_blank');
+      showToast('Generating high-resolution PDF with images...');
     } finally {
       setDownloadingSlug(null);
     }

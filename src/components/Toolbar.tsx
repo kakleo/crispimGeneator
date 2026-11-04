@@ -47,87 +47,14 @@ export default function Toolbar({ proposal }: ToolbarProps) {
     const filename = `${meta.proposal_id}${ver}-${today}.pdf`;
 
     try {
-      setDownloadStatus('Rendering PDF with images...');
-
-      // 1. Direct High-Fidelity PDF generation with full hotlink image support:
-      // Send the client's rendered DOM + styles to the headless Chromium endpoint.
-      // Headless Chromium renders with --disable-web-security, ensuring all hotlinks (Google Drive, Unsplash, Imgur) load.
-      const previewEl = document.querySelector('.preview-viewport');
-      if (previewEl) {
-        const fullHtml = `<!DOCTYPE html>
-        <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            ${document.head.innerHTML}
-            <style>
-              body { margin: 0; padding: 0; background-color: #ffffff !important; }
-              .no-print { display: none !important; }
-            </style>
-          </head>
-          <body class="${document.body.className}">
-            ${previewEl.outerHTML}
-          </body>
-        </html>`;
-
-        const exportRes = await fetch('/api/export-pdf', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ html: fullHtml, filename }),
-        });
-
-        if (exportRes.ok) {
-          const contentType = exportRes.headers.get('content-type') || '';
-          if (contentType.includes('application/pdf')) {
-            const blob = await exportRes.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-            return;
-          }
-        }
-      }
-
-      // 2. Fallback to GET /p/[proposal_id]/pdf
-      setDownloadStatus('Fetching server PDF...');
-      const res = await fetch(`/p/${encodeURIComponent(meta.proposal_id)}/pdf`);
-      const contentType = res.headers.get('content-type') || '';
-
-      if (res.ok && contentType.includes('application/pdf')) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        return;
-      }
-
-      // 3. Last-resort fallback to client-side generator
-      setDownloadStatus('Rendering PDF...');
+      setDownloadStatus('Preparing PDF with images...');
       const { downloadProposalPdfDirectly } = await import('@/lib/pdf/client-download');
       await downloadProposalPdfDirectly(filename, (progress) => {
-        setDownloadStatus(`Page ${progress.current}/${progress.total}...`);
+        setDownloadStatus(progress.message);
       });
     } catch (err: any) {
-      console.warn('PDF export error, falling back:', err);
-      try {
-        setDownloadStatus('Rendering PDF...');
-        const { downloadProposalPdfDirectly } = await import('@/lib/pdf/client-download');
-        await downloadProposalPdfDirectly(filename, (progress) => {
-          setDownloadStatus(`Page ${progress.current}/${progress.total}...`);
-        });
-      } catch (clientErr: any) {
-        alert(`Failed to download PDF: ${clientErr?.message || err?.message || 'Error occurred'}`);
-      }
+      console.error('PDF export error:', err);
+      alert(`Failed to download PDF: ${err?.message || 'Error occurred'}`);
     } finally {
       setDownloading(false);
       setDownloadStatus('');

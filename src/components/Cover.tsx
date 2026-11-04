@@ -14,10 +14,12 @@ export default function Cover({ meta, settings }: CoverProps) {
   const coverUrl = normalizeImageUrl(meta.cover_image_url);
   const [currentSrc, setCurrentSrc] = useState(coverUrl);
   const [imgError, setImgError] = useState(false);
+  const [hasTriedProxy, setHasTriedProxy] = useState(false);
 
   useEffect(() => {
     setCurrentSrc(coverUrl);
     setImgError(false);
+    setHasTriedProxy(false);
   }, [coverUrl]);
 
   const handleImgError = () => {
@@ -27,6 +29,12 @@ export default function Cover({ meta, settings }: CoverProps) {
         setCurrentSrc(`https://drive.google.com/uc?export=view&id=${id}`);
         return;
       }
+    }
+    // Fallback to image-proxy if direct loading fails
+    if (coverUrl && !hasTriedProxy && (coverUrl.startsWith('http://') || coverUrl.startsWith('https://'))) {
+      setHasTriedProxy(true);
+      setCurrentSrc(`/api/image-proxy?url=${encodeURIComponent(coverUrl)}`);
+      return;
     }
     setImgError(true);
   };

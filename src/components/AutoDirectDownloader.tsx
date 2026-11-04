@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { downloadProposalPdfDirectly } from '@/lib/pdf/client-download';
 
 interface AutoDirectDownloaderProps {
   filename: string;
@@ -9,7 +10,7 @@ interface AutoDirectDownloaderProps {
 
 export default function AutoDirectDownloader({ filename }: AutoDirectDownloaderProps) {
   const [status, setStatus] = useState<'working' | 'done' | 'error'>('working');
-  const [progressMsg, setProgressMsg] = useState('Generating high-resolution PDF with images...');
+  const [progressMsg, setProgressMsg] = useState('Preparing high-resolution PDF with images...');
 
   useEffect(() => {
     let isMounted = true;
@@ -20,59 +21,15 @@ export default function AutoDirectDownloader({ filename }: AutoDirectDownloaderP
         await new Promise((r) => setTimeout(r, 600));
         if (!isMounted) return;
 
-        const previewEl = document.querySelector('.preview-viewport');
-        if (!previewEl) {
-          throw new Error('Could not find proposal viewport to render.');
-        }
-
-        const fullHtml = `<!DOCTYPE html>
-        <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            ${document.head.innerHTML}
-            <style>
-              body { margin: 0; padding: 0; background-color: #ffffff !important; }
-              .no-print { display: none !important; }
-            </style>
-          </head>
-          <body class="${document.body.className}">
-            ${previewEl.outerHTML}
-          </body>
-        </html>`;
-
-        if (isMounted) {
-          setProgressMsg('Processing PDF & resolving hotlink images...');
-        }
-
-        const res = await fetch('/api/export-pdf', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ html: fullHtml, filename }),
+        await downloadProposalPdfDirectly(filename, (progress) => {
+          if (!isMounted) return;
+          setProgressMsg(progress.message);
         });
 
-        if (res.ok) {
-          const contentType = res.headers.get('content-type') || '';
-          if (contentType.includes('application/pdf')) {
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-
-            if (isMounted) {
-              setStatus('done');
-              setProgressMsg(`Downloaded ${filename} successfully!`);
-            }
-            return;
-          }
+        if (isMounted) {
+          setStatus('done');
+          setProgressMsg(`Downloaded ${filename} successfully!`);
         }
-
-        throw new Error('Server PDF export failed');
       } catch (err: any) {
         if (isMounted) {
           setStatus('error');

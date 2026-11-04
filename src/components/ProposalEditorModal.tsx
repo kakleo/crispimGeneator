@@ -629,8 +629,15 @@ export default function ProposalEditorModal({
                         loading="eager"
                         referrerPolicy="no-referrer"
                         onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                          const fallback = (e.target as HTMLElement).nextElementSibling;
+                          const target = e.target as HTMLImageElement;
+                          const rawUrl = normalizeImageUrl(formData.cover_image_url);
+                          if (!target.dataset.triedProxy && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))) {
+                            target.dataset.triedProxy = 'true';
+                            target.src = `/api/image-proxy?url=${encodeURIComponent(rawUrl)}`;
+                            return;
+                          }
+                          target.style.display = 'none';
+                          const fallback = target.nextElementSibling;
                           if (fallback) (fallback as HTMLElement).style.display = 'flex';
                         }}
                       />
@@ -784,8 +791,15 @@ export default function ProposalEditorModal({
                               loading="eager"
                               referrerPolicy="no-referrer"
                               onError={(e) => {
-                                (e.target as HTMLElement).style.display = 'none';
-                                const fallback = (e.target as HTMLElement).nextElementSibling;
+                                const target = e.target as HTMLImageElement;
+                                const rawUrl = normalizeImageUrl(day.image_url);
+                                if (!target.dataset.triedProxy && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))) {
+                                  target.dataset.triedProxy = 'true';
+                                  target.src = `/api/image-proxy?url=${encodeURIComponent(rawUrl)}`;
+                                  return;
+                                }
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling;
                                 if (fallback) (fallback as HTMLElement).style.display = 'flex';
                               }}
                             />
