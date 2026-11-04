@@ -12,8 +12,8 @@ const nextConfig = {
     '/api/export-pdf': ['./node_modules/@sparticuz/chromium/bin/**'],
   },
   outputFileTracingExcludes: {
-    '/p/[proposal_id]/pdf': ['./node_modules/puppeteer/**', './node_modules/@puppeteer/**'],
-    '/api/export-pdf': ['./node_modules/puppeteer/**', './node_modules/@puppeteer/**'],
+    '/p/[proposal_id]/pdf': ['./node_modules/puppeteer/**'],
+    '/api/export-pdf': ['./node_modules/puppeteer/**'],
   },
   serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core', 'puppeteer'],
   images: {
