@@ -9,6 +9,7 @@ import PriceTable from '@/components/PriceTable';
 import IncludeExclude from '@/components/IncludeExclude';
 import Terms from '@/components/Terms';
 import Footer from '@/components/Footer';
+import AutoDirectDownloader from '@/components/AutoDirectDownloader';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -18,6 +19,7 @@ interface PageProps {
     proposal_id: string;
   }>;
   searchParams?: Promise<{
+    autodownload?: string;
     autoprint?: string;
   }>;
 }
@@ -44,17 +46,18 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
 
   const { meta, settings, itinerary, pricingOptions, inclusions, extraInfoRows, introParagraphs, sanitizedHtml } = proposal;
 
+  const today = new Date().toISOString().split('T')[0];
+  const ver = meta.version ? `-${meta.version}` : '';
+  const pdfFilename = `${meta.proposal_id}${ver}-${today}.pdf`;
+
   return (
     <div className="bg-zinc-100 print:bg-white text-zinc-900 min-h-screen">
       {/* Top Toolbar outside printable area */}
       <Toolbar proposal={proposal} />
 
-      {/* Autoprint Notice for Fallback */}
-      {resolvedSearchParams?.autoprint === '1' && (
-        <div className="no-print bg-emerald-50 border-b border-emerald-200 px-4 py-2.5 text-center text-xs text-emerald-800 flex items-center justify-center gap-2">
-          <span className="font-semibold">Preparing Print-to-PDF:</span>
-          <span>Please select &quot;Save as PDF&quot; in the print dialog. If it didn&apos;t open automatically, click <strong>Print</strong> above.</span>
-        </div>
+      {/* Direct PDF Auto-Downloader (when triggered from Home table) */}
+      {resolvedSearchParams?.autodownload === '1' && (
+        <AutoDirectDownloader filename={pdfFilename} />
       )}
 
       {/* Preview Viewport */}
@@ -63,7 +66,7 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
         <Cover meta={meta} settings={settings} />
 
         {/* PAGE 2: General Information & Itinerary Start */}
-        <section className="page-container relative w-[210mm] min-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
+        <section className="page-container relative w-[210mm] min-h-[297mm] print:h-[297mm] print:max-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
           <div className="pt-[12mm] px-[9mm] pb-[16mm] flex-1">
             <GeneralInfo
               meta={meta}
@@ -92,7 +95,7 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
 
         {/* PAGE 3: Remaining Itinerary Days (if more than 2 days) */}
         {itinerary.length > 2 && (
-          <section className="page-container relative w-[210mm] min-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
+          <section className="page-container relative w-[210mm] min-h-[297mm] print:h-[297mm] print:max-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
             <div className="pt-[10mm] px-[9mm] pb-[16mm] flex-1">
               {itinerary.slice(2).map((day) => (
                 <DayBlock key={day.day_no} day={day} />
@@ -103,7 +106,7 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
         )}
 
         {/* PAGE 4: Price Information */}
-        <section className="page-container relative w-[210mm] min-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
+        <section className="page-container relative w-[210mm] min-h-[297mm] print:h-[297mm] print:max-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
           <div className="pt-[12mm] px-[14mm] pb-[16mm] flex-1">
             <PriceTable pricingOptions={pricingOptions} />
           </div>
@@ -111,7 +114,7 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
         </section>
 
         {/* PAGE 5: Inclusions & Exclusions */}
-        <section className="page-container relative w-[210mm] min-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
+        <section className="page-container relative w-[210mm] min-h-[297mm] print:h-[297mm] print:max-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
           <div className="pt-[12mm] px-[9mm] pb-[16mm] flex-1">
             <IncludeExclude
               include={inclusions.include}
@@ -122,35 +125,13 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
         </section>
 
         {/* PAGE 6: Terms of Service */}
-        <section className="page-container relative w-[210mm] min-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
+        <section className="page-container relative w-[210mm] min-h-[297mm] print:h-[297mm] print:max-h-[297mm] mx-auto mb-6 bg-white overflow-hidden shadow-lg print:shadow-none print:m-0 print:break-after-page flex flex-col justify-between">
           <div className="pt-[12mm] px-[12mm] pb-[16mm] flex-1">
             <Terms termsHtml={proposal.termsHtml} />
           </div>
           <Footer settings={settings} />
         </section>
       </div>
-
-      {/* Robust autoprint handler if triggered from /pdf fallback */}
-      {resolvedSearchParams?.autoprint === '1' && (
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                function triggerPrint() {
-                  setTimeout(function() {
-                    window.print();
-                  }, 800);
-                }
-                if (document.readyState === 'complete') {
-                  triggerPrint();
-                } else {
-                  window.addEventListener('load', triggerPrint);
-                }
-              })();
-            `,
-          }}
-        />
-      )}
     </div>
   );
 }

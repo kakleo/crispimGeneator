@@ -16,6 +16,7 @@ export default function Toolbar({ proposal }: ToolbarProps) {
 
   const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState<string>('');
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -41,7 +42,12 @@ export default function Toolbar({ proposal }: ToolbarProps) {
   const handleDownloadPdf = async () => {
     if (downloading) return;
     setDownloading(true);
+    const today = new Date().toISOString().split('T')[0];
+    const ver = meta.version ? `-${meta.version}` : '';
+    const filename = `${meta.proposal_id}${ver}-${today}.pdf`;
+
     try {
+      setDownloadStatus('Fetching PDF...');
       const res = await fetch(`/p/${encodeURIComponent(meta.proposal_id)}/pdf`);
       const contentType = res.headers.get('content-type') || '';
 
@@ -50,9 +56,7 @@ export default function Toolbar({ proposal }: ToolbarProps) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const today = new Date().toISOString().split('T')[0];
-        const ver = meta.version ? `-${meta.version}` : '';
-        a.download = `${meta.proposal_id}${ver}-${today}.pdf`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -60,13 +64,26 @@ export default function Toolbar({ proposal }: ToolbarProps) {
         return;
       }
 
-      // If server could not generate headless PDF (serverless or redirect),
-      // we are already on the proposal page! Trigger native browser print-to-PDF.
-      window.print();
-    } catch {
-      window.print();
+      // Direct client-side generation without print window
+      setDownloadStatus('Rendering PDF...');
+      const { downloadProposalPdfDirectly } = await import('@/lib/pdf/client-download');
+      await downloadProposalPdfDirectly(filename, (progress) => {
+        setDownloadStatus(`Page ${progress.current}/${progress.total}...`);
+      });
+    } catch (err: any) {
+      console.warn('Server PDF unavailable, falling back to direct client-side generation:', err);
+      try {
+        setDownloadStatus('Rendering PDF...');
+        const { downloadProposalPdfDirectly } = await import('@/lib/pdf/client-download');
+        await downloadProposalPdfDirectly(filename, (progress) => {
+          setDownloadStatus(`Page ${progress.current}/${progress.total}...`);
+        });
+      } catch (clientErr: any) {
+        alert(`Failed to download PDF: ${clientErr?.message || err?.message || 'Error occurred'}`);
+      }
     } finally {
       setDownloading(false);
+      setDownloadStatus('');
     }
   };
 
@@ -168,7 +185,7 @@ export default function Toolbar({ proposal }: ToolbarProps) {
               ) : (
                 <Download className="w-3.5 h-3.5 text-white" />
               )}
-              <span>{downloading ? 'Preparing PDF...' : 'Download PDF'}</span>
+              <span>{downloading ? (downloadStatus || 'Preparing PDF...') : 'Download PDF'}</span>
             </button>
           ) : (
             <button

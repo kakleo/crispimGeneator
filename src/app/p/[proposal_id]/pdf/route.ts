@@ -72,8 +72,13 @@ export async function GET(
     });
   } catch (error: any) {
     console.error('PDF Generation Error:', error);
-    // On serverless environments (e.g. Vercel without Chromium), launch failures, or timeouts,
-    // safely redirect to the print-optimized proposal preview so the user can Save as PDF
-    return NextResponse.redirect(new URL(`/p/${proposalId}?autoprint=1`, request.url), 302);
+    // Never return 302 HTML redirect. Return JSON error so the client-side direct PDF generator handles it seamlessly.
+    return NextResponse.json(
+      {
+        success: false,
+        error: error?.message || 'Server headless Chromium generation failed',
+      },
+      { status: 500 }
+    );
   }
 }

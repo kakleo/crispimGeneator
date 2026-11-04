@@ -129,12 +129,11 @@ export default function ProposalListTable({
         return;
       }
 
-      // If serverless environment without headless Chromium (e.g. Vercel),
-      // open in new tab with autoprint=1 so the browser opens the native Save as PDF dialog.
-      // This displays the formatted proposal and DOES NOT download an .html file!
-      window.open(`/p/${encodeURIComponent(proposalId)}?autoprint=1`, '_blank');
+      // If serverless environment without headless Chromium, open in new tab with autodownload=1
+      // The page will directly generate and download the PDF file to disk without opening any print dialog!
+      window.open(`/p/${encodeURIComponent(proposalId)}?autodownload=1`, '_blank');
     } catch {
-      window.open(`/p/${encodeURIComponent(proposalId)}?autoprint=1`, '_blank');
+      window.open(`/p/${encodeURIComponent(proposalId)}?autodownload=1`, '_blank');
     } finally {
       setDownloadingSlug(null);
     }

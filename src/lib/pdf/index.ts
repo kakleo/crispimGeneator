@@ -104,7 +104,7 @@ export async function generateProposalPdf(params: {
 
     await page.goto(printUrl.toString(), {
       waitUntil: 'domcontentloaded',
-      timeout: 15000,
+      timeout: 30000,
     });
 
     // Wait for fonts to load
