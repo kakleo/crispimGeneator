@@ -181,6 +181,7 @@ export default function ProposalListTable({
         title: raw.title || matched?.meta?.title || '',
         status,
         version: raw.version || matched?.meta?.version || 'v1',
+        price_unit: (raw.price_unit === 'unit' || matched?.meta?.price_unit === 'unit') ? 'unit' : 'person',
         cover_image_url: raw.cover_image_url ? normalizeImageUrl(raw.cover_image_url) : (matched?.meta?.cover_image_url || ''),
         tour_type: raw.tour_type || matched?.meta?.tour_type || 'Private Tour',
         travel_date: raw.travel_date ? String(raw.travel_date) : (matched?.meta?.travel_date || ''),
@@ -206,6 +207,7 @@ export default function ProposalListTable({
         pricing: Array.isArray(raw.pricing) && raw.pricing.length > 0
           ? raw.pricing.map((opt: any) => ({
               option_label: String(opt.option_label || 'OPTION #1'),
+              price_unit: (opt.price_unit === 'unit' || raw.price_unit === 'unit' || matched?.meta?.price_unit === 'unit') ? 'unit' : 'person',
               stays: Array.isArray(opt.stays) ? opt.stays.join('\n') : String(opt.stays || ''),
               rows: (Array.isArray(opt.rows) ? opt.rows : []).map((r: any) => ({
                 row_type: String(r.row_type || 'Standard'),
@@ -215,6 +217,7 @@ export default function ProposalListTable({
             }))
           : (matched?.pricingOptions || []).map((opt) => ({
               option_label: opt.label,
+              price_unit: (opt.price_unit === 'unit' || matched?.meta?.price_unit === 'unit') ? 'unit' : 'person',
               stays: opt.rows[0]?.stays?.join('\n') || '',
               rows: opt.rows.map((r) => ({
                 row_type: r.type,

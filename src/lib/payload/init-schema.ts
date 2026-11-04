@@ -33,6 +33,7 @@ export const SCHEMA_STATEMENTS = [
     \`title\` text NOT NULL,
     \`status\` text DEFAULT 'draft' NOT NULL,
     \`version\` text DEFAULT 'v1',
+    \`price_unit\` text DEFAULT 'person',
     \`cover_image_url\` text,
     \`tour_type\` text DEFAULT 'Private Tour (Minimum 2 People)',
     \`travel_date\` text DEFAULT '2026',
@@ -63,6 +64,7 @@ export const SCHEMA_STATEMENTS = [
     \`_parent_id\` integer NOT NULL,
     \`id\` text PRIMARY KEY NOT NULL,
     \`option_label\` text NOT NULL,
+    \`price_unit\` text DEFAULT 'person',
     \`stays\` text,
     FOREIGN KEY (\`_parent_id\`) REFERENCES \`proposals\`(\`id\`) ON UPDATE no action ON DELETE cascade
   );`,
@@ -193,6 +195,8 @@ export async function ensureDatabaseSchema(adapter: any) {
   const columnMigrations = [
     'ALTER TABLE `proposals_itinerary` ADD COLUMN `image_url` text;',
     'ALTER TABLE `proposals` ADD COLUMN `cover_image_url` text;',
+    'ALTER TABLE `proposals` ADD COLUMN `price_unit` text DEFAULT \'person\';',
+    'ALTER TABLE `proposals_pricing` ADD COLUMN `price_unit` text DEFAULT \'person\';',
   ];
   for (const alterSql of columnMigrations) {
     try {

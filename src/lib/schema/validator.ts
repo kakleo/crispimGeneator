@@ -92,6 +92,8 @@ function parsePricingFromText(rawText: string, proposalId: string): { rows: Pric
     const stays = rawStays ? rawStays.split(/;|\n/).map((s) => s.trim()).filter(Boolean) : [];
 
     const formattedPrice = formatCurrency(priceAmount, currency);
+    const rawUnit = parts.length >= 6 ? parts[5] : '';
+    const priceUnit = rawUnit.toLowerCase().includes('unit') ? 'unit' : 'person';
 
     rows.push({
       proposal_id: proposalId,
@@ -100,10 +102,11 @@ function parsePricingFromText(rawText: string, proposalId: string): { rows: Pric
       price_amount: priceAmount,
       currency,
       stays,
+      price_unit: priceUnit,
     });
 
     if (!optionsMap.has(optionLabel)) {
-      optionsMap.set(optionLabel, { label: optionLabel, rows: [] });
+      optionsMap.set(optionLabel, { label: optionLabel, price_unit: priceUnit, rows: [] });
     }
 
     optionsMap.get(optionLabel)!.rows.push({
@@ -112,6 +115,7 @@ function parsePricingFromText(rawText: string, proposalId: string): { rows: Pric
       rawPrice: priceAmount,
       currency,
       stays,
+      price_unit: priceUnit,
     });
   }
 
@@ -385,9 +389,10 @@ export function validateAndParseProposal(
         .filter(Boolean);
 
       const formattedPrice = formatCurrency(priceAmount || 0, currency);
+      const priceUnit = row.price_unit === 'unit' ? 'unit' : 'person';
 
       if (!optionsMap.has(optionLabel)) {
-        optionsMap.set(optionLabel, { label: optionLabel, rows: [] });
+        optionsMap.set(optionLabel, { label: optionLabel, price_unit: priceUnit, rows: [] });
       }
 
       optionsMap.get(optionLabel)!.rows.push({
@@ -396,6 +401,7 @@ export function validateAndParseProposal(
         rawPrice: priceAmount,
         currency,
         stays,
+        price_unit: priceUnit,
       });
     }
 

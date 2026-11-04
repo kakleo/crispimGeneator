@@ -56,6 +56,16 @@ export const Proposals: CollectionConfig = {
       defaultValue: 'Private Tour (Minimum 2 People)',
     },
     {
+      name: 'price_unit',
+      type: 'select',
+      defaultValue: 'person',
+      options: [
+        { label: 'Price / Person', value: 'person' },
+        { label: 'Price / Unit', value: 'unit' },
+      ],
+      label: 'Default Pricing Unit',
+    },
+    {
       name: 'travel_date',
       type: 'text',
       label: 'Travel Date / Year',
@@ -129,6 +139,16 @@ export const Proposals: CollectionConfig = {
           label: 'Option Label (e.g. OPTION #1)',
         },
         {
+          name: 'price_unit',
+          type: 'select',
+          defaultValue: 'person',
+          options: [
+            { label: 'Price / Person', value: 'person' },
+            { label: 'Price / Unit', value: 'unit' },
+          ],
+          label: 'Pricing Unit (Person or Unit)',
+        },
+        {
           name: 'stays',
           type: 'textarea',
           label: 'Hotel Stays (one per line, e.g. Day 1: Bintang Lodge Moni)',
@@ -148,7 +168,7 @@ export const Proposals: CollectionConfig = {
               name: 'price_amount',
               type: 'number',
               required: true,
-              label: 'Price per Person',
+              label: 'Price Amount',
             },
             {
               name: 'currency',

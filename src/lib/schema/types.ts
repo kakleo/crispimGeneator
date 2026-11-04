@@ -1,4 +1,5 @@
 export type ProposalStatus = 'draft' | 'ready' | 'archived';
+export type PriceUnit = 'person' | 'unit';
 
 export function normalizeStatus(val: unknown): ProposalStatus {
   const s = String(val || '').toLowerCase().trim();
@@ -58,6 +59,7 @@ export interface ProposalMeta {
   status: ProposalStatus;
   version?: string;
   title: string;
+  price_unit?: PriceUnit | string;
   cover_image_url?: string;
   intro_text?: string;
   tour_type?: string;
@@ -84,16 +86,19 @@ export interface PricingRow {
   price_amount: number;
   currency: string;
   stays: string[];
+  price_unit?: PriceUnit | string;
 }
 
 export interface PricingOptionGroup {
   label: string;
+  price_unit?: PriceUnit | string;
   rows: Array<{
     type: string;
     price: string;
     rawPrice: number;
     currency: string;
     stays: string[];
+    price_unit?: PriceUnit | string;
   }>;
 }
 

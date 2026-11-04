@@ -92,6 +92,7 @@ export function payloadDocToProposalDocument(doc: any, customTermsHtml?: string)
   itinerary.sort((a, b) => a.day_no - b.day_no);
 
   // 2. Pricing parsing
+  const defaultDocUnit = doc.price_unit === 'unit' ? 'unit' : 'person';
   const rawPricing = Array.isArray(doc.pricing) ? doc.pricing : [];
   const pricingOptions: PricingOptionGroup[] = rawPricing.map((opt: any) => {
     let staysList: string[] = [];
@@ -104,6 +105,8 @@ export function payloadDocToProposalDocument(doc: any, customTermsHtml?: string)
         .filter(Boolean);
     }
 
+    const priceUnit = opt.price_unit === 'unit' ? 'unit' : (opt.price_unit === 'person' ? 'person' : defaultDocUnit);
+
     const rows = (Array.isArray(opt.rows) ? opt.rows : []).map((r: any) => {
       const priceAmount = Number(r.price_amount) || 0;
       const currency = String(r.currency || 'IDR').toUpperCase();
@@ -113,11 +116,13 @@ export function payloadDocToProposalDocument(doc: any, customTermsHtml?: string)
         rawPrice: priceAmount,
         currency,
         stays: staysList,
+        price_unit: priceUnit,
       };
     });
 
     return {
       label: String(opt.option_label || 'OPTION #1'),
+      price_unit: priceUnit,
       rows,
     };
   });
@@ -167,6 +172,7 @@ export function payloadDocToProposalDocument(doc: any, customTermsHtml?: string)
       status: normalizeStatus(doc.status),
       version: doc.version || 'v1',
       title: String(doc.title || 'Untitled Tour Proposal'),
+      price_unit: defaultDocUnit,
       cover_image_url: doc.cover_image_url ? normalizeImageUrl(doc.cover_image_url) : undefined,
       tour_type: doc.tour_type || undefined,
       travel_date: doc.travel_date ? String(doc.travel_date) : undefined,
@@ -295,6 +301,7 @@ export async function duplicateProposalInPayload(sourceSlug: string): Promise<an
   const cleanPricing = Array.isArray(source.pricing)
     ? source.pricing.map((opt: any) => ({
         option_label: opt.option_label,
+        price_unit: opt.price_unit || source.price_unit || 'person',
         stays: opt.stays || '',
         rows: Array.isArray(opt.rows)
           ? opt.rows.map((r: any) => ({
@@ -311,6 +318,7 @@ export async function duplicateProposalInPayload(sourceSlug: string): Promise<an
     title: newTitle,
     status: normalizeStatus(source.status),
     version: source.version ? `${source.version}-copy` : 'v1',
+    price_unit: source.price_unit || 'person',
     cover_image_url: source.cover_image_url || '',
     tour_type: source.tour_type || '',
     travel_date: source.travel_date || '',

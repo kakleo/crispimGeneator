@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ProposalStatus, normalizeStatus, normalizeImageUrl } from '@/lib/schema/types';
+import { ProposalStatus, normalizeStatus, normalizeImageUrl, PriceUnit } from '@/lib/schema/types';
 import {
   X,
   Plus,
@@ -15,7 +15,11 @@ import {
   Hotel,
   ExternalLink,
   Image as ImageIcon,
+  User,
+  Package,
 } from 'lucide-react';
+
+export { type PriceUnit };
 
 export interface DayInput {
   day_no: number;
@@ -33,6 +37,7 @@ export interface PricingVariantInput {
 
 export interface PricingOptionInput {
   option_label: string;
+  price_unit?: PriceUnit;
   stays: string;
   rows: PricingVariantInput[];
 }
@@ -42,6 +47,7 @@ export interface ProposalFormData {
   title: string;
   status: ProposalStatus;
   version: string;
+  price_unit?: PriceUnit;
   cover_image_url: string;
   tour_type: string;
   travel_date: string;
@@ -68,6 +74,7 @@ const DEFAULT_FORM: ProposalFormData = {
   title: '',
   status: 'draft',
   version: 'v1',
+  price_unit: 'person',
   cover_image_url: '',
   tour_type: 'Private Tour (Minimum 2 People)',
   travel_date: '2026',
@@ -88,6 +95,7 @@ const DEFAULT_FORM: ProposalFormData = {
   pricing: [
     {
       option_label: 'OPTION #1',
+      price_unit: 'person',
       stays: 'Day 1: Hotel Moni\nDay 2: Hotel Bajawa\nDay 3: Hotel Ruteng',
       rows: [
         { row_type: 'Without Tour Guide', price_amount: 5000000, currency: 'IDR' },
@@ -102,9 +110,11 @@ const DEFAULT_FORM: ProposalFormData = {
 
 const getInitialForm = (data?: ProposalFormData | null): ProposalFormData => {
   if (!data) return DEFAULT_FORM;
+  const proposalPriceUnit: PriceUnit = data.price_unit === 'unit' ? 'unit' : 'person';
   return {
     ...data,
     status: normalizeStatus(data.status),
+    price_unit: proposalPriceUnit,
     cover_image_url: normalizeImageUrl(data.cover_image_url),
     itinerary: Array.isArray(data.itinerary)
       ? data.itinerary.map((d) => ({
@@ -112,6 +122,12 @@ const getInitialForm = (data?: ProposalFormData | null): ProposalFormData => {
           image_url: normalizeImageUrl(d.image_url),
         }))
       : DEFAULT_FORM.itinerary,
+    pricing: Array.isArray(data.pricing) && data.pricing.length > 0
+      ? data.pricing.map((opt) => ({
+          ...opt,
+          price_unit: (opt.price_unit === 'unit' || proposalPriceUnit === 'unit') ? 'unit' : 'person',
+        }))
+      : DEFAULT_FORM.pricing,
   };
 };
 
@@ -186,12 +202,14 @@ export default function ProposalEditorModal({
   // Pricing Handlers (Pain Free!)
   const addPricingOption = () => {
     const optNo = formData.pricing.length + 1;
+    const defaultUnit: PriceUnit = formData.pricing[0]?.price_unit || formData.price_unit || 'person';
     setFormData((prev) => ({
       ...prev,
       pricing: [
         ...prev.pricing,
         {
           option_label: `OPTION #${optNo}`,
+          price_unit: defaultUnit,
           stays: '',
           rows: [
             { row_type: 'Without Tour Guide', price_amount: 5000000, currency: 'IDR' },
@@ -214,6 +232,14 @@ export default function ProposalEditorModal({
       const copy = [...prev.pricing];
       copy[optIdx] = { ...copy[optIdx], option_label: val };
       return { ...prev, pricing: copy };
+    });
+  };
+
+  const updatePricingOptionUnit = (optIdx: number, unit: PriceUnit) => {
+    setFormData((prev) => {
+      const copy = [...prev.pricing];
+      copy[optIdx] = { ...copy[optIdx], price_unit: unit };
+      return { ...prev, price_unit: unit, pricing: copy };
     });
   };
 
@@ -297,11 +323,16 @@ export default function ProposalEditorModal({
 
       const payloadToSave = {
         ...formData,
+        price_unit: formData.price_unit === 'unit' ? 'unit' : 'person',
         status: normalizeStatus(formData.status),
         cover_image_url: normalizeImageUrl(formData.cover_image_url),
         itinerary: formData.itinerary.map((d) => ({
           ...d,
           image_url: normalizeImageUrl(d.image_url),
+        })),
+        pricing: formData.pricing.map((opt) => ({
+          ...opt,
+          price_unit: opt.price_unit === 'unit' ? 'unit' : 'person',
         })),
       };
 
@@ -778,11 +809,11 @@ export default function ProposalEditorModal({
           {/* TAB 3: PRICE TABLE BUILDER (PAIN FREE!) */}
           {activeTab === 'pricing' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-zinc-200">
                 <div>
                   <h3 className="text-xs font-semibold text-zinc-800">Price Packages & Hotel Stays</h3>
                   <p className="text-[11px] text-zinc-500">
-                    No more pipes or semicolons. Enter options, stays, and price variants cleanly.
+                    Switch between Price / Person and Price / Unit, enter stays, and customize package variants.
                   </p>
                 </div>
                 <button
@@ -801,9 +832,9 @@ export default function ProposalEditorModal({
                   className="p-5 rounded-xl border-2 border-zinc-200 bg-white shadow-sm space-y-4"
                 >
                   {/* Option Header */}
-                  <div className="flex items-center justify-between gap-4 pb-3 border-b border-zinc-100">
-                    <div className="flex items-center gap-2 flex-1 max-w-sm">
-                      <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-zinc-100">
+                    <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                      <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 shrink-0">
                         Option Label:
                       </span>
                       <input
@@ -814,6 +845,37 @@ export default function ProposalEditorModal({
                         placeholder="e.g. OPTION #1 (Standard Hotel)"
                         className="px-3 py-1.5 text-xs font-bold border border-zinc-300 rounded-md bg-zinc-50 shadow-xs focus:ring-1 focus:ring-zinc-900 flex-1"
                       />
+                    </div>
+
+                    {/* Price Unit Selector: Price / Person vs Price / Unit */}
+                    <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-lg border border-zinc-200 shrink-0">
+                      <span className="text-[11px] font-semibold text-zinc-500 pl-1.5 pr-0.5">Rate:</span>
+                      <button
+                        type="button"
+                        onClick={() => updatePricingOptionUnit(optIdx, 'person')}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition ${
+                          opt.price_unit !== 'unit'
+                            ? 'bg-white text-zinc-900 shadow-xs border border-zinc-200'
+                            : 'text-zinc-500 hover:text-zinc-900'
+                        }`}
+                        title="Display and calculate price per person"
+                      >
+                        <User className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Price / Person</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updatePricingOptionUnit(optIdx, 'unit')}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition ${
+                          opt.price_unit === 'unit'
+                            ? 'bg-white text-zinc-900 shadow-xs border border-zinc-200'
+                            : 'text-zinc-500 hover:text-zinc-900'
+                        }`}
+                        title="Display and calculate price per unit / package / charter"
+                      >
+                        <Package className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Price / Unit</span>
+                      </button>
                     </div>
 
                     <button
@@ -845,9 +907,18 @@ export default function ProposalEditorModal({
                   {/* Pricing Variants List */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-zinc-700">
-                        Price Variants (per person)
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-zinc-700">
+                          Price Variants ({opt.price_unit === 'unit' ? 'per unit' : 'per person'})
+                        </span>
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                          opt.price_unit === 'unit'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}>
+                          Table column: {opt.price_unit === 'unit' ? 'Price / Unit' : 'Price / Person'}
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={() => addPricingVariant(optIdx)}
@@ -906,7 +977,9 @@ export default function ProposalEditorModal({
                               className="px-3 py-1.5 text-xs border border-zinc-300 rounded bg-white w-32 font-semibold text-right"
                             />
 
-                            <span className="text-[11px] text-zinc-400">/ person</span>
+                            <span className="text-[11px] text-zinc-500 font-medium whitespace-nowrap min-w-[50px]">
+                              {opt.price_unit === 'unit' ? '/ unit' : '/ person'}
+                            </span>
                           </div>
 
                           <button
