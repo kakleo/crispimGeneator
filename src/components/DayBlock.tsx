@@ -53,21 +53,25 @@ export default function DayBlock({ day }: DayBlockProps) {
   return (
     <div className="day-block relative mb-[6mm] min-h-[44mm] break-inside-avoid">
       {/* Day Banner */}
-      <div className="inline-block bg-blue text-white font-bold text-[4mm] py-[2.8mm] pr-[4mm] pl-[13mm] -ml-[9mm] min-w-[140mm] rounded-r-[7mm] mb-[5mm]">
+      <div className="inline-block bg-blue text-white font-bold text-[4mm] py-[2.8mm] pr-[4mm] pl-[13mm] -ml-[9mm] min-w-[140mm] rounded-r-[7mm] mb-[4.5mm]">
         {fullTitle}
       </div>
 
-      {/* Bullet Items */}
-      <ul className="w-[118mm] pl-[7mm] list-disc text-[3.7mm] leading-[1.3] mb-[5mm] text-black">
+      {/* Bullet Items with styled, reliable circular dots and generous line-height */}
+      <ul className="w-[124mm] mb-[4mm] text-black space-y-[2.8mm]">
         {day.items.map((item, idx) => (
-          <li key={idx} className="mb-[0.8mm]">
-            {item}
+          <li key={idx} className="relative pl-[4.5mm] text-[3.6mm] leading-[1.55]">
+            <span
+              className="absolute left-0 top-[2.2mm] w-[1.4mm] h-[1.4mm] rounded-full bg-zinc-800 shrink-0"
+              style={{ borderRadius: '50%' }}
+            />
+            <span className="block">{item}</span>
           </li>
         ))}
       </ul>
 
       {/* Accommodation Note */}
-      <div className="text-[3.9mm] ml-[1mm] text-black">{accommodationText}</div>
+      <div className="text-[3.7mm] font-medium text-black mt-[2mm]">{accommodationText}</div>
 
       {/* Polaroid Photo Frame on Right */}
       <div className="absolute -right-[1mm] top-[8mm] w-[48mm] h-[45mm] bg-[#f1f1ed] border border-[#ddd] shadow-[3mm_1.5mm_0_-1mm_#f6f6f3]">

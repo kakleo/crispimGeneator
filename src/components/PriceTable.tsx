@@ -29,7 +29,8 @@ export default function PriceTable({ pricingOptions }: PriceTableProps) {
                   {columns.map((col, idx) => (
                     <th
                       key={idx}
-                      className="border-[.5mm] border-black px-[4mm] py-[3.5mm] h-[14mm] font-sans font-bold text-left text-zinc-900 bg-[#f9fafb]"
+                      className="border-[.5mm] border-black px-[4mm] py-[3.5mm] h-[12mm] font-sans font-bold text-left text-zinc-900 bg-[#f9fafb] align-middle"
+                      style={{ verticalAlign: 'middle' }}
                     >
                       {col}
                     </th>
@@ -44,33 +45,55 @@ export default function PriceTable({ pricingOptions }: PriceTableProps) {
                         {idx === 0 && (
                           <>
                             <td
-                              className="border-[.5mm] border-black px-[4mm] w-[45mm] text-center h-[13.5mm] text-black bg-white align-middle font-sans"
+                              className="border-[.5mm] border-black px-[3mm] py-[2mm] w-[45mm] text-center text-black bg-white align-middle font-sans"
+                              style={{ verticalAlign: 'middle' }}
                               rowSpan={row.stays.length}
                             >
-                              {row.type}
+                              <div className="w-full min-h-[12mm] flex items-center justify-center text-center leading-[1.35]">
+                                {row.type}
+                              </div>
                             </td>
                             <td
-                              className="border-[.5mm] border-black px-[4mm] w-[45mm] text-black bg-white align-middle font-sans font-medium"
+                              className="border-[.5mm] border-black px-[3mm] py-[2mm] w-[45mm] text-center text-black bg-white align-middle font-sans font-semibold"
+                              style={{ verticalAlign: 'middle' }}
                               rowSpan={row.stays.length}
                             >
-                              {row.price}
+                              <div className="w-full min-h-[12mm] flex items-center justify-center text-center leading-[1.35]">
+                                {row.price}
+                              </div>
                             </td>
                           </>
                         )}
-                        <td className="border-[.5mm] border-black px-[4mm] h-[13.5mm] text-black bg-white align-middle font-sans">
+                        <td
+                          className="border-[.5mm] border-black px-[4mm] py-[2.5mm] text-black bg-white align-middle font-sans leading-[1.4]"
+                          style={{ verticalAlign: 'middle' }}
+                        >
                           {stay}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr key={rowIdx}>
-                      <td className="border-[.5mm] border-black px-[4mm] w-[45mm] text-center h-[13.5mm] text-black bg-white align-middle font-sans">
-                        {row.type}
+                      <td
+                        className="border-[.5mm] border-black px-[3mm] py-[2.5mm] w-[45mm] text-center text-black bg-white align-middle font-sans"
+                        style={{ verticalAlign: 'middle' }}
+                      >
+                        <div className="w-full flex items-center justify-center text-center leading-[1.35]">
+                          {row.type}
+                        </div>
                       </td>
-                      <td className="border-[.5mm] border-black px-[4mm] w-[45mm] text-black bg-white align-middle font-sans font-medium">
-                        {row.price}
+                      <td
+                        className="border-[.5mm] border-black px-[3mm] py-[2.5mm] w-[45mm] text-center text-black bg-white align-middle font-sans font-semibold"
+                        style={{ verticalAlign: 'middle' }}
+                      >
+                        <div className="w-full flex items-center justify-center text-center leading-[1.35]">
+                          {row.price}
+                        </div>
                       </td>
-                      <td className="border-[.5mm] border-black px-[4mm] h-[13.5mm] text-black bg-white align-middle font-sans">
+                      <td
+                        className="border-[.5mm] border-black px-[4mm] py-[2.5mm] text-black bg-white align-middle font-sans leading-[1.4]"
+                        style={{ verticalAlign: 'middle' }}
+                      >
                         -
                       </td>
                     </tr>

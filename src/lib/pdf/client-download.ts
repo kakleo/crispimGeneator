@@ -119,6 +119,11 @@ export async function downloadProposalPdfDirectly(
 
   const total = pageElements.length;
 
+  // Ensure web fonts (DM Sans) are completely loaded before capturing layout
+  if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
   // 1. Inline all images so html2canvas never makes cross-origin requests
   const restoreImages = await inlineAllProposalImages(pageElements, (msg) => {
     if (onProgress) {

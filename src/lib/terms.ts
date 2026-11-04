@@ -41,6 +41,16 @@ For inquiries or assistance, please contact us via WhatsApp at **+62 821-4473-78
 let cachedTermsMarkdown: string | null = null;
 let cachedTermsHtml: string | null = null;
 
+export function compileMarkdownToHtml(markdown: string): string {
+  if (!markdown) return '';
+  // Convert any <br/> to real markdown newlines so CommonMark doesn't freeze in raw HTML block mode
+  let clean = markdown.replace(/<br\s*\/?>/gi, '\n\n');
+  let html = marked.parse(clean, { gfm: true, breaks: true }) as string;
+  // Ensure any lingering markdown bold syntax (**text**) is cleanly converted to <strong>
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  return html;
+}
+
 async function getPayloadAdapter() {
   try {
     const { getPayloadClient } = await import('./payload/client');
@@ -72,7 +82,7 @@ export async function getTermsMarkdown(): Promise<string> {
       if (res?.rows && res.rows.length > 0 && res.rows[0].data) {
         const dbContent = String(res.rows[0].data);
         cachedTermsMarkdown = dbContent;
-        cachedTermsHtml = marked.parse(dbContent) as string;
+        cachedTermsHtml = compileMarkdownToHtml(dbContent);
         return cachedTermsMarkdown;
       }
     }
@@ -87,7 +97,7 @@ export async function getTermsMarkdown(): Promise<string> {
       const fileContent = fs.readFileSync(termsPath, 'utf-8');
       if (fileContent.trim()) {
         cachedTermsMarkdown = fileContent;
-        cachedTermsHtml = marked.parse(fileContent) as string;
+        cachedTermsHtml = compileMarkdownToHtml(fileContent);
         return cachedTermsMarkdown;
       }
     }
@@ -97,48 +107,54 @@ export async function getTermsMarkdown(): Promise<string> {
 
   // 3. Fallback to default
   cachedTermsMarkdown = DEFAULT_TERMS_MARKDOWN;
-  cachedTermsHtml = marked.parse(DEFAULT_TERMS_MARKDOWN) as string;
+  cachedTermsHtml = compileMarkdownToHtml(DEFAULT_TERMS_MARKDOWN);
   return cachedTermsMarkdown;
 }
 
 /**
  * Saves Terms of Service in Markdown format.
- * Persists to memory cache, SQLite/Turso payload_kv, and content/terms.md.
+ * Updates in-memory cache, writes to content/terms.md, and persists in SQLite/Turso payload_kv table.
  */
-export async function saveTermsMarkdown(markdown: string): Promise<void> {
-  const cleanMarkdown = markdown.trim();
-  cachedTermsMarkdown = cleanMarkdown;
-  cachedTermsHtml = marked.parse(cleanMarkdown) as string;
-
-  // 1. Persist to SQLite / Turso database
+export async function saveTermsMarkdown(markdown: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const client = await getPayloadAdapter();
-    if (client && typeof client.execute === 'function') {
-      await client.execute({
-        sql: `INSERT INTO payload_kv (key, data) VALUES ('terms_of_service', ?)
-              ON CONFLICT(key) DO UPDATE SET data = excluded.data`,
-        args: [cleanMarkdown],
-      });
+    const cleanMd = markdown.trim();
+    cachedTermsMarkdown = cleanMd;
+    cachedTermsHtml = compileMarkdownToHtml(cleanMd);
+
+    // 1. Write to content/terms.md
+    try {
+      const termsPath = path.resolve(process.cwd(), 'content', 'terms.md');
+      const dir = path.dirname(termsPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(termsPath, cleanMd, 'utf-8');
+    } catch (fsErr) {
+      console.warn('[Terms] Could not write to content/terms.md (read-only filesystem on Vercel):', fsErr);
     }
-  } catch (dbErr) {
-    console.error('[Terms] Failed to persist terms to database:', dbErr);
-  }
 
-  // 2. Persist to content/terms.md file on disk
-  try {
-    const termsPath = path.resolve(process.cwd(), 'content', 'terms.md');
-    fs.writeFileSync(termsPath, cleanMarkdown, 'utf-8');
-  } catch (fsErr) {
-    // Read-only filesystem warning in serverless
-    console.warn('[Terms] Could not write to content/terms.md (filesystem might be read-only):', fsErr);
-  }
+    // 2. Persist to Database payload_kv table
+    try {
+      const client = await getPayloadAdapter();
+      if (client && typeof client.execute === 'function') {
+        await client.execute({
+          sql: `CREATE TABLE IF NOT EXISTS payload_kv (key TEXT PRIMARY KEY, data TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`,
+          args: [],
+        });
+        await client.execute({
+          sql: `INSERT INTO payload_kv (key, data, updated_at) VALUES ('terms_of_service', ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(key) DO UPDATE SET data = excluded.data, updated_at = CURRENT_TIMESTAMP`,
+          args: [cleanMd],
+        });
+      }
+    } catch (dbErr) {
+      console.warn('[Terms] Could not persist to payload_kv table:', dbErr);
+    }
 
-  // 3. Clear PDF buffer cache so subsequent PDF exports use the latest terms
-  try {
-    const { clearPdfCache } = await import('./pdf');
-    clearPdfCache();
-  } catch (pdfErr) {
-    // Ignore if pdf module not available
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Terms] Failed to save terms markdown:', error);
+    return { success: false, error: error?.message || 'Failed to save terms' };
   }
 }
 
@@ -157,7 +173,7 @@ export async function getTermsHtmlAsync(variant: string = 'standard'): Promise<s
     return cachedTermsHtml;
   }
   const md = await getTermsMarkdown();
-  cachedTermsHtml = marked.parse(md) as string;
+  cachedTermsHtml = compileMarkdownToHtml(md);
   return cachedTermsHtml;
 }
 
@@ -174,7 +190,7 @@ export function getTermsHtml(variant: string = 'standard'): string {
     if (fs.existsSync(termsPath)) {
       const markdown = fs.readFileSync(termsPath, 'utf-8');
       cachedTermsMarkdown = markdown;
-      cachedTermsHtml = marked.parse(markdown) as string;
+      cachedTermsHtml = compileMarkdownToHtml(markdown);
       return cachedTermsHtml;
     }
   } catch (err) {
@@ -182,6 +198,6 @@ export function getTermsHtml(variant: string = 'standard'): string {
   }
 
   cachedTermsMarkdown = DEFAULT_TERMS_MARKDOWN;
-  cachedTermsHtml = marked.parse(DEFAULT_TERMS_MARKDOWN) as string;
+  cachedTermsHtml = compileMarkdownToHtml(DEFAULT_TERMS_MARKDOWN);
   return cachedTermsHtml;
 }

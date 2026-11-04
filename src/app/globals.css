@@ -20,12 +20,48 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Footer Bar Alignment (ensures SVG icons and text labels are perfectly aligned vertically in HTML & canvas) */
+.footer-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 11mm !important;
+  line-height: 1 !important;
+}
+
+.footer-bar-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+}
+
+.footer-bar-item svg {
+  display: block !important;
+  vertical-align: middle !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+}
+
+.footer-bar-item span {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+}
+
+/* Table Vertical Centering across all proposal sections */
+.price-section table th,
+.price-section table td,
+.general-info-section table td {
+  vertical-align: middle !important;
+}
+
 /* Terms of Service Section Styling (Consistent Font & Readable Spacing) */
 .terms-content {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   color: #18181b;
-  font-size: 3.25mm;
-  line-height: 1.5;
+  font-size: 3.2mm;
+  line-height: 1.55;
 }
 
 .terms-content h1 {
@@ -40,42 +76,33 @@ body {
   line-height: 1.1;
 }
 
-.terms-content h2 {
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-size: 4.5mm;
-  font-weight: 700;
-  text-transform: uppercase;
-  margin-top: 4mm;
-  margin-bottom: 2mm;
-  color: #000000;
-}
-
+.terms-content h2,
 .terms-content h3 {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 3.8mm;
   font-weight: 700;
   letter-spacing: 0.01em;
-  margin-top: 4mm;
-  margin-bottom: 2mm;
+  margin-top: 3.5mm;
+  margin-bottom: 1.8mm;
   color: #000000 !important;
-  border-bottom: 0.5px solid #e4e4e7;
-  padding-bottom: 1mm;
+  line-height: 1.25;
 }
 
 .terms-content p {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   margin-top: 1.5mm;
   margin-bottom: 2.5mm;
-  line-height: 1.5;
+  line-height: 1.55;
   color: #27272a;
 }
 
 .terms-content ul {
-  list-style-type: disc !important;
-  margin-left: 5mm !important;
+  list-style: none !important;
+  list-style-type: none !important;
+  margin-left: 0 !important;
   margin-top: 1.5mm !important;
   margin-bottom: 3mm !important;
-  padding-left: 2mm !important;
+  padding-left: 0 !important;
 }
 
 .terms-content ol {
@@ -87,15 +114,22 @@ body {
 }
 
 .terms-content li {
-  margin-bottom: 1.8mm !important;
-  line-height: 1.5 !important;
+  position: relative !important;
+  padding-left: 4.5mm !important;
+  margin-bottom: 2mm !important;
+  line-height: 1.55 !important;
   color: #27272a;
-  padding-left: 1mm;
 }
 
-.terms-content li::marker {
-  color: #78c24e;
-  font-size: 1.1em;
+.terms-content li::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0.5mm !important;
+  top: 2.1mm !important;
+  width: 1.3mm !important;
+  height: 1.3mm !important;
+  background-color: #78c24e !important;
+  border-radius: 50% !important;
 }
 
 .terms-content strong,
