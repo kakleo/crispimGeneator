@@ -2,15 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { downloadProposalPdfDirectly } from '@/lib/pdf/client-download';
 
 interface AutoDirectDownloaderProps {
   filename: string;
+  proposalId: string;
 }
 
-export default function AutoDirectDownloader({ filename }: AutoDirectDownloaderProps) {
+export default function AutoDirectDownloader({ filename, proposalId }: AutoDirectDownloaderProps) {
   const [status, setStatus] = useState<'working' | 'done' | 'error'>('working');
-  const [progressMsg, setProgressMsg] = useState('Preparing high-resolution PDF with images...');
+  const [progressMsg, setProgressMsg] = useState('Generating high-resolution PDF...');
 
   useEffect(() => {
     let isMounted = true;
@@ -18,12 +18,40 @@ export default function AutoDirectDownloader({ filename }: AutoDirectDownloaderP
     async function runDownload() {
       try {
         // Allow images & fonts to mount in DOM
-        await new Promise((r) => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 400));
         if (!isMounted) return;
 
+        // 1. Try server-side Chromium PDF (pixel-perfect)
+        try {
+          const res = await fetch(`/p/${encodeURIComponent(proposalId)}/pdf`);
+          const contentType = res.headers.get('content-type') || '';
+
+          if (res.ok && contentType.includes('application/pdf')) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            if (isMounted) {
+              setStatus('done');
+              setProgressMsg(`Downloaded ${filename} successfully!`);
+            }
+            return;
+          }
+        } catch {
+          // Server PDF failed, fall through to client-side
+        }
+
+        // 2. Fallback: client-side html2canvas
+        if (isMounted) setProgressMsg('Rendering PDF client-side...');
+        const { downloadProposalPdfDirectly } = await import('@/lib/pdf/client-download');
         await downloadProposalPdfDirectly(filename, (progress) => {
-          if (!isMounted) return;
-          setProgressMsg(progress.message);
+          if (isMounted) setProgressMsg(progress.message);
         });
 
         if (isMounted) {
@@ -33,7 +61,7 @@ export default function AutoDirectDownloader({ filename }: AutoDirectDownloaderP
       } catch (err: any) {
         if (isMounted) {
           setStatus('error');
-          setProgressMsg(`Could not download PDF directly: ${err?.message || 'Error occurred'}`);
+          setProgressMsg(`Could not download PDF: ${err?.message || 'Error occurred'}`);
         }
       }
     }
@@ -43,7 +71,7 @@ export default function AutoDirectDownloader({ filename }: AutoDirectDownloaderP
     return () => {
       isMounted = false;
     };
-  }, [filename]);
+  }, [filename, proposalId]);
 
   return (
     <div className="no-print bg-zinc-950 text-white px-4 py-2.5 text-xs flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 shadow-sm">

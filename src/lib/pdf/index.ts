@@ -1,4 +1,4 @@
-import puppeteer, { type Browser } from 'puppeteer';
+import type { Browser } from 'puppeteer-core';
 import crypto from 'crypto';
 
 interface PdfCacheEntry {
@@ -45,6 +45,41 @@ export function computeDataHash(data: any): string {
   return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex').substring(0, 16);
 }
 
+/**
+ * Launch a headless Chromium browser.
+ * - On Vercel / AWS Lambda: uses @sparticuz/chromium (serverless-compatible binary)
+ * - Locally: uses full puppeteer with its bundled Chromium
+ */
+async function launchBrowser(): Promise<Browser> {
+  const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+  if (isServerless) {
+    const chromium = (await import('@sparticuz/chromium')).default;
+    const puppeteerCore = (await import('puppeteer-core')).default;
+
+    return puppeteerCore.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    }) as unknown as Browser;
+  } else {
+    // Local development — use full puppeteer (ships its own Chromium)
+    const puppeteer = (await import('puppeteer')).default;
+    return puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--font-render-hinting=none',
+        '--disable-web-security',
+        '--allow-running-insecure-content',
+      ],
+    }) as unknown as Browser;
+  }
+}
+
 export async function generateProposalPdf(params: {
   proposalId: string;
   dataHash: string;
@@ -64,18 +99,7 @@ export async function generateProposalPdf(params: {
   let browser: Browser | null = null;
 
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--font-render-hinting=none',
-        '--disable-web-security',
-        '--allow-running-insecure-content',
-      ],
-    });
+    browser = await launchBrowser();
 
     const page = await browser.newPage();
 
@@ -106,11 +130,11 @@ export async function generateProposalPdf(params: {
     printUrl.searchParams.set('mode', 'print');
 
     await page.goto(printUrl.toString(), {
-      waitUntil: 'domcontentloaded',
+      waitUntil: 'networkidle0',
       timeout: 30000,
     });
 
-    // Wait for fonts to load
+    // Wait for fonts and images to load
     await page.evaluate(async () => {
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
@@ -121,7 +145,7 @@ export async function generateProposalPdf(params: {
         images.map((img) => {
           if (img.complete && img.naturalWidth > 0) return Promise.resolve();
           return new Promise<void>((resolve) => {
-            const timeout = setTimeout(() => resolve(), 4000);
+            const timeout = setTimeout(() => resolve(), 8000);
             img.addEventListener('load', () => {
               clearTimeout(timeout);
               resolve();
@@ -134,6 +158,9 @@ export async function generateProposalPdf(params: {
         })
       );
     });
+
+    // Small extra delay to ensure final layout paint
+    await new Promise((r) => setTimeout(r, 500));
 
     // Generate A4 PDF with exact colors and CSS sizing
     const pdfUint8Array = await page.pdf({

@@ -57,7 +57,7 @@ export default async function ProposalPreviewPage({ params, searchParams }: Page
 
       {/* Direct PDF Auto-Downloader (when triggered from Home table) */}
       {resolvedSearchParams?.autodownload === '1' && (
-        <AutoDirectDownloader filename={pdfFilename} />
+        <AutoDirectDownloader filename={pdfFilename} proposalId={meta.proposal_id} />
       )}
 
       {/* Preview Viewport */}

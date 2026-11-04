@@ -47,7 +47,26 @@ export default function Toolbar({ proposal }: ToolbarProps) {
     const filename = `${meta.proposal_id}${ver}-${today}.pdf`;
 
     try {
-      setDownloadStatus('Preparing PDF with images...');
+      // 1. Server-side Chromium PDF (pixel-perfect, works on Vercel with @sparticuz/chromium)
+      setDownloadStatus('Generating high-resolution PDF...');
+      const res = await fetch(`/p/${encodeURIComponent(meta.proposal_id)}/pdf`);
+      const contentType = res.headers.get('content-type') || '';
+
+      if (res.ok && contentType.includes('application/pdf')) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        return;
+      }
+
+      // 2. Fallback: client-side html2canvas (if server PDF fails)
+      setDownloadStatus('Rendering PDF client-side...');
       const { downloadProposalPdfDirectly } = await import('@/lib/pdf/client-download');
       await downloadProposalPdfDirectly(filename, (progress) => {
         setDownloadStatus(progress.message);

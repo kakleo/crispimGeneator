@@ -1,19 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
+import type { Browser } from 'puppeteer-core';
 
 export const dynamic = 'force-dynamic';
 // Allow up to 60s for high-res PDF generation with external hotlink image downloads
 export const maxDuration = 60;
 
-export async function POST(request: NextRequest) {
-  try {
-    const { html, filename } = await request.json();
+/**
+ * Launch a headless Chromium browser.
+ * - On Vercel / AWS Lambda: uses @sparticuz/chromium (serverless-compatible binary)
+ * - Locally: uses full puppeteer with its bundled Chromium
+ */
+async function launchBrowser(): Promise<Browser> {
+  const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-    if (!html || typeof html !== 'string') {
-      return NextResponse.json({ error: 'Missing HTML content' }, { status: 400 });
-    }
+  if (isServerless) {
+    const chromium = (await import('@sparticuz/chromium')).default;
+    const puppeteerCore = (await import('puppeteer-core')).default;
 
-    const browser = await puppeteer.launch({
+    return puppeteerCore.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    }) as unknown as Browser;
+  } else {
+    const puppeteer = (await import('puppeteer')).default;
+    return puppeteer.launch({
       headless: true,
       args: [
         '--no-sandbox',
@@ -24,7 +35,19 @@ export async function POST(request: NextRequest) {
         '--disable-web-security',
         '--allow-running-insecure-content',
       ],
-    });
+    }) as unknown as Browser;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { html, filename } = await request.json();
+
+    if (!html || typeof html !== 'string') {
+      return NextResponse.json({ error: 'Missing HTML content' }, { status: 400 });
+    }
+
+    const browser = await launchBrowser();
 
     try {
       const page = await browser.newPage();
@@ -99,7 +122,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || 'Failed to render PDF with hotlink images',
+        error: error?.message || 'PDF generation failed',
       },
       { status: 500 }
     );

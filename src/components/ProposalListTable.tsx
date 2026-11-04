@@ -105,13 +105,35 @@ export default function ProposalListTable({
     }
   };
 
-  // Safe PDF Download handler (direct high-resolution PDF download with inlined hotlink images)
+  // Safe PDF Download handler — server-side Chromium (pixel-perfect), fallback to autodownload
   const handleDownloadPdf = async (proposalId: string, version?: string) => {
     if (downloadingSlug) return;
     setDownloadingSlug(proposalId);
     try {
+      const res = await fetch(`/p/${encodeURIComponent(proposalId)}/pdf`);
+      const contentType = res.headers.get('content-type') || '';
+
+      if (res.ok && contentType.includes('application/pdf')) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const today = new Date().toISOString().split('T')[0];
+        const ver = version ? `-${version}` : '';
+        a.download = `${proposalId}${ver}-${today}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        showToast('PDF downloaded successfully');
+        return;
+      }
+
+      // Fallback: open preview with autodownload
       window.open(`/p/${encodeURIComponent(proposalId)}?autodownload=1`, '_blank');
-      showToast('Generating high-resolution PDF with images...');
+      showToast('Generating PDF in new tab...');
+    } catch {
+      window.open(`/p/${encodeURIComponent(proposalId)}?autodownload=1`, '_blank');
     } finally {
       setDownloadingSlug(null);
     }
